@@ -10,7 +10,7 @@ hook_fns      = []    # List of hook functions to run
 started_state = False # True if we are tracing. 
                       # FIXME: in 2.6 we can use sys.gettrace
 
-def __find_hook(trace_fn):
+def _find_hook(trace_fn):
     """Find TRACE_FN in hook_fns, and return the index of it.
     return None is not found."""
     global hook_fns
@@ -20,7 +20,7 @@ def __find_hook(trace_fn):
         return None
     return i
 
-def __tracer_func(frame, event, arg):
+def _tracer_func(frame, event, arg):
     """The internal function set by sys.settrace which runs
     all of the user-registered trace hook functions."""
     global hook_fns
@@ -30,9 +30,9 @@ def __tracer_func(frame, event, arg):
     # should return a reference to itself (or to another function
     # for further tracing in that scope), or None to turn off
     # tracing in that scope. 
-    return __tracer_func
+    return _tracer_func
     
-def add_hook(trace_fn, to_front=False, issue_start=False):
+def add_hook(trace_fn, to_front=False, do_start=False):
     """Add TRACE_FN to the list of callback functions that get run
     when tracing is turned on. The number of hook functions
     registered is returned. 
@@ -53,7 +53,7 @@ def add_hook(trace_fn, to_front=False, issue_start=False):
     position = 0
     if to_front: position = -1
     hook_fns[position:position] = [trace_fn]
-    if issue_start: start()
+    if do_start: start()
     return len(hook_fns)
     
 def clear_hooks():
@@ -71,7 +71,7 @@ def size():
     global hook_fns
     return len(hook_fns)
 
-def isstarted():
+def is_started():
     """Return true if tracing has been started. Until we assume Python 2.6
     or better, keeping track is done by internal tracking. Thus calls to 
     sys.settrace outside of Tracer won't be detected :-(
@@ -86,7 +86,7 @@ def remove_hook(trace_fn, stop_if_empty=False):
     removal, the number of callback functions remaining is
     returned."""
     global hook_fns
-    i = __find_hook(trace_fn)
+    i = _find_hook(trace_fn)
     if i is not None:
         del hook_fns[i]
         if 0 == len(hook_fns) and stop_if_empty:
@@ -101,7 +101,7 @@ def start(hook_fn=None):
     """Start using all previously-registered trace hooks. If hook_fn
     is not None, we'll search for that and add it if it's not already
     added."""
-    if sys.settrace(__tracer_func) is None:
+    if sys.settrace(_tracer_func) is None:
         global hook_fns, started_state
         started_state = True
         return len(hook_fns)
@@ -131,11 +131,11 @@ if __name__=='__main__':
         return trace_dispatch
     def foo(): print "foo"
 
-    print "Tracing started: %s" % isstarted()
+    print "Tracing started: %s" % is_started()
 
     start() # tracer.start() outside of this file
 
-    print "Tracing started: %s" % isstarted()
+    print "Tracing started: %s" % is_started()
     add_hook(trace_dispatch) # tracer.add_hook(...) outside
     eval("1+2")
     stop()
@@ -144,7 +144,7 @@ if __name__=='__main__':
     foo()
     z=5
     remove_hook(trace_dispatch, stop_if_empty=True)
-    print "Tracing started: %s" % isstarted()
+    print "Tracing started: %s" % is_started()
     exit(0)
 
 
