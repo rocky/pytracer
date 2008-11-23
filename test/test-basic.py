@@ -4,7 +4,7 @@
 import operator, os, sys, unittest
 
 # For now we assume we run this program in this directory.
-top_builddir = ".."
+top_builddir = os.path.join(os.path.dirname(__file__), '..')
 if top_builddir[-1] != os.path.sep:
     top_builddir += os.path.sep
 sys.path.insert(0, top_builddir)
