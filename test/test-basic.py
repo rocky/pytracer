@@ -39,6 +39,7 @@ class TestTracer(unittest.TestCase):
         return
 
     def test_basic(self):
+        """Basic sanity and status testing."""
         self.assertEqual(0, tracer.size())
         self.assertEqual(False, tracer.is_started())
         tracer.start()
@@ -63,7 +64,7 @@ class TestTracer(unittest.TestCase):
         return
 
     def test_errors(self):
-        """Test various errors conditions."""
+        """Test various error conditions."""
         # Don't know why assertRaises fails...
         # self.assertRaises(TypeError, tracer.add_hook(5))
         try:
@@ -93,6 +94,7 @@ class TestTracer(unittest.TestCase):
         return
 
     def test_trace(self):
+        """Test that trace hook is triggering event callbacks."""
         tracer.clear_hooks_and_stop()
         self.assertEqual(1, tracer.add_hook(trace_dispatch, do_start=True))
         def foo(): pass
