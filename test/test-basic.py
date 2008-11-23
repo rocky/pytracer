@@ -21,7 +21,7 @@ class Bunch:
         return '\n'.join(state)
 
 trace_lines = []
-def trace_dispatch(frame, event, arg):
+def my_trace_dispatch(frame, event, arg):
     global trace_lines
     filename = frame.f_code.co_filename
     lineno   = frame.f_lineno
@@ -47,17 +47,17 @@ class TestTracer(unittest.TestCase):
 
         tracer.stop()
         self.assertEqual(False, tracer.is_started())
-        self.assertEqual(1, tracer.add_hook(trace_dispatch))
+        self.assertEqual(1, tracer.add_hook(my_trace_dispatch))
         self.assertEqual(0, len(trace_lines))
 
         tracer.start()
         self.assertEqual(0, len(trace_lines))
         self.assertEqual(True, tracer.is_started())
         self.assertEqual(0, 
-                         tracer.remove_hook(trace_dispatch, 
+                         tracer.remove_hook(my_trace_dispatch, 
                                             stop_if_empty=True))
         self.assertEqual(False, tracer.is_started())
-        self.assertEqual(1, tracer.add_hook(trace_dispatch,
+        self.assertEqual(1, tracer.add_hook(my_trace_dispatch,
                                             do_start=True))
         self.assertEqual(True, tracer.is_started())
         tracer.clear_hooks_and_stop()
@@ -94,21 +94,44 @@ class TestTracer(unittest.TestCase):
         return
 
     def test_trace(self):
-        """Test that trace hook is triggering event callbacks."""
+        """Test that trace hook is triggering event callbacks.(No filtering.)"""
         tracer.clear_hooks_and_stop()
-        self.assertEqual(1, tracer.add_hook(trace_dispatch, do_start=True))
+        self.assertEqual(1, tracer.add_hook(my_trace_dispatch, do_start=True))
         def foo(): pass
         foo()
         tracer.stop()
         global trace_lines
-        import pprint
-#         for entry in trace_lines: 
-#              print entry.event, entry.filename, entry.lineno, entry.name
+#       import pprint
+#       for entry in trace_lines: 
+#           print entry.event, entry.filename, entry.lineno, entry.name
+        self.assertTrue(len(trace_lines) >= 5,
+                        'Should have captured some trace output')
         for i, right in [(-1, ('line',   'stop',)),
                          (-2, ('call',   'stop',)),
                          (-3, ('return', 'foo', )),
                          (-4, ('line',   'foo', )),
                          (-5, ('call',   'foo', ))
+                         ]:
+            self.assertEqual(right, 
+                             (trace_lines[i].event, trace_lines[i].name,))
+        return
+
+    def test_trace_filtering(self):
+        """Test that trace hook is triggering event callbacks with filtering."""
+        tracer.clear_hooks_and_stop()
+        self.assertEqual(1, tracer.add_hook(my_trace_dispatch, do_start=True,
+                                            event_set=frozenset(('call',))))
+        def foo(): pass
+        foo()
+        tracer.stop()
+        global trace_lines
+#       import pprint
+#       for entry in trace_lines: 
+#           print entry.event, entry.filename, entry.lineno, entry.name
+        self.assertTrue(len(trace_lines) >= 2,
+                        'Should have captured some trace output')
+        for i, right in [(-1, ('call',   'stop',)),
+                         (-2, ('call',   'foo', ))
                          ]:
             self.assertEqual(right, 
                              (trace_lines[i].event, trace_lines[i].name,))
