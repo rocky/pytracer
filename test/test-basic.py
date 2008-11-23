@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- Python -*-
 "Unit test for Tracer"
-import os, sys, unittest
+import operator, os, sys, unittest
 
 # For now we assume we run this program in this directory.
 top_builddir = ".."
@@ -11,28 +11,40 @@ sys.path.insert(0, top_builddir)
 
 import tracer
 
-class Bunch:
-    def __init__(self, **kwds):
-        self.__dict__.update(kwds)
-        return
-    def __str__(self):
-        state = ["%s=%r" % (attribute, value)
-                 for (attribute, value) in self.__dict__.items()]
-        return '\n'.join(state)
+# Python Cookbook Recipe 6.7
+def superTuple(typename, *attribute_names):
+    " create and return a subclass of `tuple', with named attributes "
+    # make the subclass with appropriate __new__ and __repr__ specials
+    nargs = len(attribute_names)
+    class supertup(tuple):
+        __slots__ = ()   # save memory, we don't need a per-instance dict
+        def __new__(cls, *args):
+            if len(args) !=nargs:
+                raise TypeError, '%s takes exactly %d arguments (%d given)' % (
+                    typename, nargs, len(args))
+            return tuple.__new__(cls, args)
+        def __repr__(self):
+            return '%s(%s)' % (typename, ', '.join(map(repr, self)))
+    # add a few key touches to our subclass of `tuple'
+    for index, attr_name in enumerate(attribute_names):
+        setattr(supertup, attr_name, property(operator.itemgetter(index)))
+    supertup.__name__ = typename
+    return supertup
 
 trace_lines = []
+
 def my_trace_dispatch(frame, event, arg):
     global trace_lines
+    Entry    = superTuple('line_entry', 'frame', 'event', 'arg', 'filename',
+                          'lineno', 'name')
     filename = frame.f_code.co_filename
     lineno   = frame.f_lineno
     name     = frame.f_code.co_name
-    entry    = Bunch(frame=frame, event=event, arg=arg, filename=filename,
-                     lineno=lineno, name=name)
+    entry    = Entry(frame, event, arg, filename, lineno, name)
     trace_lines += (entry,)
     return
 
 class TestTracer(unittest.TestCase):
-    global trace_lines
 
     def setUp(self):
         trace_lines = []
