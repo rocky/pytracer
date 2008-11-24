@@ -14,11 +14,12 @@ setup(
               ("Topic :: Software Development :: Libraries :: "
                "Python Modules"),
               ],
-      description        = (""),
+      description        = 'Centralized sys.settrace management',
       license            = 'GPL',
       long_description   = long_description,
       name               = 'pytracer', 
       py_modules         = ['tracer'],
       test_suite         = 'nose.collector',
+      # url = 
       version            = version,
       )
