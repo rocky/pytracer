@@ -2,4 +2,4 @@
 *.pyc
 build
 dist
-pytracer.egg-info
+tracer.egg-info

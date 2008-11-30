@@ -1,25 +1,32 @@
+#!/usr/bin/env python
+"""
+distutils setup (setup.py) for pytracer.
+
+This gets a bit of package info from __pkginfo__.py file
+"""
+# Get the required package information 
+from __pkginfo__ import author, author_email, classifiers, license, modname, \
+     short_desc, version, web
+
 from setuptools import setup
 
-version = '0.1.0'
-
 import os
-README = os.path.join(os.path.dirname(__file__), 'README.txt')
+top_dir = os.path.dirname(__file__)
+README  = os.path.join(top_dir, 'README.txt')
+
+# Description in package will come from the README file.
 long_description = open(README).read() + '\n\n'
 
 setup(
-      author             = 'Rocky Bernstein',
-      author_email       = 'rocky@gnu.org',
-      classifiers        = [
-              "Programming Language :: Python",
-              ("Topic :: Software Development :: Libraries :: "
-               "Python Modules"),
-              ],
-      description        = 'Centralized sys.settrace management',
-      license            = 'GPL',
+      author             = author,
+      author_email       = author_email,
+      classifiers        = classifiers,
+      description        = short_desc,
+      license            = license,
       long_description   = long_description,
-      name               = 'pytracer', 
+      name               = modname,
       py_modules         = ['tracer'],
       test_suite         = 'nose.collector',
-      # url = 
+      url                = web,
       version            = version,
       )
