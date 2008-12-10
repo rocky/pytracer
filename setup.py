@@ -5,8 +5,9 @@ distutils setup (setup.py) for pytracer.
 This gets a bit of package info from __pkginfo__.py file
 """
 # Get the required package information 
-from __pkginfo__ import author, author_email, classifiers, license, modname, \
-     short_desc, version, web
+from __pkginfo__ import author, author_email, classifiers, download_url, \
+    license, modname, \
+    short_desc, version, web
 
 from setuptools import setup
 
@@ -22,6 +23,7 @@ setup(
       author_email       = author_email,
       classifiers        = classifiers,
       description        = short_desc,
+      download_url       = download_url,
       license            = license,
       long_description   = long_description,
       name               = modname,
