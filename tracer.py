@@ -3,7 +3,7 @@ sets of trace events to get registered and unregistered and allow tracing
 to be turned on and off temporarily without losing the trace functions.
 """
 
-import operator, sys, inspect
+import operator, sys, inspect, threading
 
 # Python Cookbook Recipe 6.7
 def superTuple(typename, *attribute_names):
@@ -140,11 +140,15 @@ def remove_hook(trace_fn, stop_if_empty=False):
     
 # FIXME: in 2.6, there is the possibility for chaining 
 # existing hooks by using sys.gettrace().
-def start(trace_fn=None, to_front=False, event_set=None):
+# FIXME: change to use options
+def start(trace_fn=None, to_front=False, event_set=None,
+          include_threads=True):
     """Start using all previously-registered trace hooks. If `trace_fn'
     is not None, we'll search for that and add it if it's not already
     added."""
     if trace_fn is not None: add_hook(trace_fn, to_front, event_set)
+    if include_threads:
+        threading.settrace(_tracer_func)
     if sys.settrace(_tracer_func) is None:
         global STARTED_STATE, HOOKS
         STARTED_STATE = True
