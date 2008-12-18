@@ -35,6 +35,8 @@ STARTED_STATE = False # True if we are tracing.
 ALL_EVENTS    = frozenset(('c_call', 'c_exception', 'c_return', 'call', 
                            'exception', 'line', 'return',))
 
+def _null_trace_hook(frame, event, arg): pass
+
 def _check_event_set(event_set):
     " check `event_set' for validity. Raise TypeError if not valid "
     if event_set is not None and not event_set.issubset(ALL_EVENTS):
@@ -50,20 +52,59 @@ def _find_hook(trace_fn):
         return None
     return i
 
+def _option_set(options, value, default_opts):
+    if value in options:
+        return options[value]
+    elif value in default_opts:
+        return default_opts[value]
+    else:
+        return None
+    pass
+
 def _tracer_func(frame, event, arg):
     """The internal function set by sys.settrace which runs
     all of the user-registered trace hook functions."""
     global HOOKS
+
+    # sys.settrace's semantics provide that a if trace hook returns
+    # None, it should turn off tracing for that frame. We will
+    # approximate that: if *all* trace hooks request ignore, then we
+    # will reset the trace flag in the frame. We could do better
+    # at the expense and overhead by saving more info and checking
+    # more on each event.
+    event_triggered  = False
+    keep_trace       = False
+
+    # Go over all registered hooks
     for hook in HOOKS:
         if hook.event_set is None or event in hook.event_set:
-            hook.trace_fn(frame, event, arg)
+            keep_trace      = keep_trace or hook.trace_fn(frame, event, arg)
+            event_triggered = True
+            pass
+        pass
+    # print "event_seen %s, keep_trace %s" % (event_triggered, keep_trace,)
+    if event_triggered and not keep_trace:
+        # INVESTIGATE: I don't know why, but returning None doesn't
+        # nuke the trace for this funcition.  So we'll instead set it
+        # to a no-op trace hook.
+        frame.f_trace = _null_trace_hook
+        return None
+        
     # From sys.settrace info: The local trace function
     # should return a reference to itself (or to another function
     # for further tracing in that scope), or None to turn off
     # tracing in that scope. 
     return _tracer_func
-    
-def add_hook(trace_fn, to_front=False, do_start=False, event_set=None):
+
+
+DEFAULT_ADD_HOOK_OPTS = {
+    'front': False, 
+    'start': False, 
+    'event_set': ALL_EVENTS, 
+    'ignore_me': False
+    }
+
+def add_hook(trace_fn, options=DEFAULT_ADD_HOOK_OPTS):
     """Add `trace_fn' to the list of callback functions that get run
     when tracing is turned on. The number of hook functions
     registered is returned. 
@@ -79,6 +120,13 @@ def add_hook(trace_fn, to_front=False, do_start=False, event_set=None):
     given, it is checked for validity.
     """
 
+    global STARTED_STATE
+    if STARTED_STATE:
+        # Set to not trace this routine.
+        frame = inspect.currentframe()
+        frame.f_trace = _null_trace_hook
+        pass
+
     # Parameter checking:
     if not inspect.isfunction(trace_fn):
         raise TypeError, "trace_fn should be something isfunction() blesses"
@@ -89,10 +137,28 @@ def add_hook(trace_fn, to_front=False, do_start=False, event_set=None):
                         trace_fn.func_code.co_argcount))
     except:
         raise TypeError
+
+    event_set = _option_set(options, 'event_set', DEFAULT_ADD_HOOK_OPTS)
     _check_event_set(event_set)
-            
-    position = to_front and 0 or -1
+
+    position = _option_set(options, 'front', DEFAULT_ADD_HOOK_OPTS)
+
+    # We set start_option via a function call *before* updating HOOKS
+    # so we don't trigger a call after tracing this function is in
+    # effect.
+    do_start = _option_set(options, 'start', DEFAULT_ADD_HOOK_OPTS)
+    
+    if not _option_set(options, 'ignore_me', DEFAULT_ADD_HOOK_OPTS):
+        # Set to trace calling this routine.
+        frame = inspect.currentframe().f_back
+        frame.f_trace = _tracer_func
+        pass
+
+    # If the global tracer hook has been registered, the below will
+    # trigger the hook to get called after the assignment.
+    # That's why we set the hook for this frame to ignore tracing.
     HOOKS[position:position] = [Trace_entry(trace_fn, event_set)]
+
     if do_start: start()
     return len(HOOKS)
     
@@ -166,7 +232,10 @@ def stop():
 
 # Demo it
 if __name__ == '__main__':
+    trace_count = 25
+
     def my_trace_dispatch(frame, event, arg):
+        global trace_count
         'A sample trace function'
         lineno = frame.f_lineno
         filename = frame.f_code.co_filename
@@ -175,9 +244,17 @@ if __name__ == '__main__':
             print arg
         else:
             print
+            pass
 
         # print "event: %s frame %s arg %s\n" % [event, frame, arg]
-        return my_trace_dispatch
+        if trace_count > 0:
+            trace_count -= 1
+            return my_trace_dispatch
+        else:
+            print "Max trace count reached - turning off tracing"
+            return None
+        return
+
     def foo(): print "foo"
 
     print "** Tracing started before start(): %s" % is_started()
@@ -192,12 +269,15 @@ if __name__ == '__main__':
     start()
     foo()
     z = 5
+    for i in range(10):
+        print i
+    trace_count = 25
     remove_hook(my_trace_dispatch, stop_if_empty=True)
     print "** Tracing started: %s" % is_started()
 
     print "** Tracing only 'call' now..."
-    add_hook(my_trace_dispatch, do_start=True,
-             event_set=frozenset(('call',)))
+    add_hook(my_trace_dispatch, 
+             {'start': True, 'event_set': frozenset(('call',))})
     foo()
     stop()
     exit(0)
