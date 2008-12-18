@@ -6,7 +6,7 @@ This gets a bit of package info from __pkginfo__.py file
 """
 # Get the required package information 
 from __pkginfo__ import author, author_email, classifiers, download_url, \
-    license, modname, \
+    license, modname, package_dir, \
     short_desc, version, web
 
 from setuptools import setup
@@ -27,6 +27,7 @@ setup(
       license            = license,
       long_description   = long_description,
       name               = modname,
+      package_dir        = package_dir,
       py_modules         = ['tracer'],
       test_suite         = 'nose.collector',
       url                = web,

@@ -41,3 +41,5 @@ classifiers =  ['Development Status :: 4 - Beta',
                 'Topic :: Software Development :: Libraries :: Python Modules',
                 ]
 download_url = 'tracer-%s.egg' % version
+
+package_dir = {'': 'tracer'}
