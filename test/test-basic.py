@@ -54,7 +54,7 @@ class TestTracer(unittest.TestCase):
         self.assertEqual(False, tracer.is_started())
         self.assertEqual(1, 
                          tracer.add_hook(my_trace_dispatch,
-                                         {'ignore_me': True}))
+                                         {'backlevel': 1}))
         self.assertEqual(0, len(trace_lines))
 
         tracer.start()
@@ -66,7 +66,7 @@ class TestTracer(unittest.TestCase):
         self.assertEqual(False, tracer.is_started())
         self.assertEqual(1, tracer.add_hook(my_trace_dispatch,
                                             {'start': True,
-                                             'ignore_me': True}))
+                                             'backlevel': 1}))
         self.assertEqual(True, tracer.is_started())
         tracer.clear_hooks_and_stop()
         return
@@ -107,7 +107,7 @@ class TestTracer(unittest.TestCase):
         tracer.clear_hooks_and_stop()
         self.assertEqual(1, tracer.add_hook(my_trace_dispatch, 
                                             {'start': True,
-                                             'ignore_me': True}))
+                                             'backlevel': 1}))
         def squares(): 
             j = 1
             for i in range(5): 

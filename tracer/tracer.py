@@ -5,7 +5,7 @@ to be turned on and off temporarily without losing the trace
 functions.
 """
 
-import operator, sys, inspect, threading
+import operator, sys, inspect, threading, types
 
 # Python Cookbook Recipe 6.7
 def superTuple(typename, *attribute_names):
@@ -35,8 +35,11 @@ HOOKS         = []    # List of Bunch(trace_fn, event_set)
 STARTED_STATE = False # True if we are tracing. 
                       # FIXME: in 2.6 we can use sys.gettrace
 
-ALL_EVENTS    = frozenset(('c_call', 'c_exception', 'c_return', 'call', 
-                           'exception', 'line', 'return',))
+ALL_EVENT_NAMES   = ('c_call', 'c_exception', 'c_return', 'call', 
+                     'exception', 'line', 'return',)
+ALL_EVENTS    = frozenset(ALL_EVENT_NAMES)
+
+TRACE_SUSPEND = False
 
 def null_trace_hook(frame, event, arg): 
     """ A trace hook that doesn't do anything. Can use this to "turn off"
@@ -72,18 +75,21 @@ def option_set(options, value, default_opts):
 def _tracer_func(frame, event, arg):
     """The internal function set by sys.settrace which runs
     all of the user-registered trace hook functions."""
-    global HOOKS
+
+    global TRACE_SUSPEND, HOOKS
+    if TRACE_SUSPEND: return _tracer_func
 
     # Go over all registered hooks
-    for hook in HOOKS:
+    for i in range(len(HOOKS)):
+        hook = HOOKS[i]
         if hook.ignore_frame == frame: continue
         if hook.event_set is None or event in hook.event_set:
             if not hook.trace_fn(frame, event, arg):
                 # sys.settrace's semantics provide that a if trace
                 # hook returns None or False, it should turn off
                 # tracing for that frame.
-                hook = Trace_entry(hook.trace_fn, hook.event_set,
-                                   frame)
+                HOOKS[i] = Trace_entry(hook.trace_fn, hook.event_set,
+                                       frame)
             pass
         pass
     # print "event_seen %s, keep_trace %s" % (event_triggered, keep_trace,)
@@ -99,7 +105,7 @@ DEFAULT_ADD_HOOK_OPTS = {
     'front': False, 
     'start': False, 
     'event_set': ALL_EVENTS, 
-    'ignore_me': False
+    'backlevel': 0
     }
 
 def add_hook(trace_fn, options=DEFAULT_ADD_HOOK_OPTS):
@@ -108,26 +114,34 @@ def add_hook(trace_fn, options=DEFAULT_ADD_HOOK_OPTS):
     registered is returned. 
 
     A check is made on `trace_fn' to make sure it is a function
-    which takes 3 parameters.
+    which takes 3 parameters: a frame, an event, and an arg or which
+    sometimes arg is None.
 
     If `to_front' is given, the hook will be made at the front of the 
     list of hooks; otherwise it will be added at the end.
 
     `options' is a hash having potential keys: 'front', 'start',
-    'event_set', and 'ignore_me'. If event_set is included, it should
-    be  is a list of events that trace_fn will get run on. 'to_front'
-    adds the hook the the front of the list; the default is the back of the
-    list. 'start' is a boolean which indicates the hooks should be
-    started if they aren't already. 'ignore_me' indicates that the
-    calling function should be excluded from the tracing.
-    """
+    'event_set', and 'backlevel'. 
 
-    global STARTED_STATE
-    if STARTED_STATE:
-        # Set to not trace this routine.
-        frame = inspect.currentframe()
-        frame.f_trace = null_trace_hook
-        pass
+    If the event_set option-key is included, it should be is an event
+    set that trace_fn will get run on. Use set() or frozenset() to
+    create this set. ALL_EVENT_NAMES is a tuple contain a list of
+    the event names. ALL_EVENTS is a frozenset of these.
+
+    'to_front' adds the hook the the front of the list; the default is
+    the back of the list. 
+
+    'start' is a boolean which indicates the hooks should be started
+    if they aren't already. 
+
+    'backlevel' an integer indicates that the calling should continue
+    backwards in return call frames and is the number of levels to
+    skip ignore. 0 means that the caller of add_hook() is traced as
+    well as a all new frames the caller subsequently calls. 1 means
+    that all the caller of add_hook() is ignored but prior parent
+    frames are traced, and None means that no previous parent frames
+    should be traced.
+    """
 
     # Parameter checking:
     if not inspect.isfunction(trace_fn):
@@ -150,26 +164,35 @@ def add_hook(trace_fn, options=DEFAULT_ADD_HOOK_OPTS):
     # so we don't trigger a call after tracing this function is in
     # effect.
     do_start = get_option('start')
-    
-    frame = inspect.currentframe().f_back
-    if get_option('ignore_me'):
-        ignore_frame = frame
-    else:
-        ignore_frame = None
+
+    ignore_frame = inspect.currentframe()
+    # Should we trace frames below the one that we issued this 
+    # call? 
+    backlevel = get_option('backlevel')
+    if backlevel is not None:
+        if types.IntType != type(backlevel):
+            raise TypeError, (
+                'backlevel should be an integer type, is %s' % (
+                    backlevel))
+        frame = ignore_frame
+        while frame and backlevel >= 0:
+            backlevel -= 1
+            frame = frame.f_back
+            pass
+        
+        # Set to trace all frames below this
+        while frame:
+            frame.f_trace = _tracer_func
+            frame = frame.f_back
+            pass
+        
         pass
-
-    # Set to trace calling this routine.
-    frame.f_trace = _tracer_func
-
-    patch_caller = get_option('patch_caller')
-    if patch_caller: patch_caller.f_trace = _tracer_func
-
     # If the global tracer hook has been registered, the below will
     # trigger the hook to get called after the assignment.
     # That's why we set the hook for this frame to ignore tracing.
-    HOOKS[position:position] = [Trace_entry(trace_fn, event_set,
+    HOOKS[position:position] = [Trace_entry(trace_fn, event_set, 
                                             ignore_frame)]
-
+    
     if do_start: start()
     return len(HOOKS)
     
@@ -255,7 +278,7 @@ def stop():
 
 # Demo it
 if __name__ == '__main__':
-    trace_count = 25
+    trace_count = 10
 
     import tracefilter
     ignore_filter = tracefilter.TraceFilter([find_hook, stop, remove_hook])
@@ -295,7 +318,7 @@ if __name__ == '__main__':
     start()
     foo()
     z = 5
-    for i in range(10):
+    for i in range(6):
         print i
     trace_count = 25
     remove_hook(my_trace_dispatch, stop_if_empty=True)
