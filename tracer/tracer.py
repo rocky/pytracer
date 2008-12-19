@@ -27,7 +27,8 @@ def superTuple(typename, *attribute_names):
     supertup.__name__ = typename
     return supertup
 
-Trace_entry = superTuple('Trace_entry', 'trace_fn', 'event_set')
+Trace_entry = superTuple('Trace_entry', 'trace_fn', 'event_set',
+                         'ignore_frame')
 
 HOOKS         = []    # List of Bunch(trace_fn, event_set)
                       # We run trace_fn if the event is in event_set.
@@ -73,29 +74,19 @@ def _tracer_func(frame, event, arg):
     all of the user-registered trace hook functions."""
     global HOOKS
 
-    # sys.settrace's semantics provide that a if trace hook returns
-    # None, it should turn off tracing for that frame. We will
-    # approximate that: if *all* trace hooks request ignore, then we
-    # will reset the trace flag in the frame. We could do better
-    # at the expense and overhead by saving more info and checking
-    # more on each event.
-    event_triggered  = False
-    keep_trace       = False
-
     # Go over all registered hooks
     for hook in HOOKS:
+        if hook.ignore_frame == frame: continue
         if hook.event_set is None or event in hook.event_set:
-            keep_trace      = keep_trace or hook.trace_fn(frame, event, arg)
-            event_triggered = True
+            if not hook.trace_fn(frame, event, arg):
+                # sys.settrace's semantics provide that a if trace
+                # hook returns None or False, it should turn off
+                # tracing for that frame.
+                hook = Trace_entry(hook.trace_fn, hook.event_set,
+                                   frame)
             pass
         pass
     # print "event_seen %s, keep_trace %s" % (event_triggered, keep_trace,)
-    if event_triggered and not keep_trace:
-        # INVESTIGATE: I don't know why, but returning None doesn't
-        # nuke the trace for this funcition.  So we'll instead set it
-        # to a no-op trace hook.
-        frame.f_trace = null_trace_hook
-        return None
         
     # From sys.settrace info: The local trace function
     # should return a reference to itself (or to another function
@@ -156,16 +147,21 @@ def add_hook(trace_fn, options=DEFAULT_ADD_HOOK_OPTS):
     # effect.
     do_start = option_set('start')
     
-    if not option_set('ignore_me'):
-        # Set to trace calling this routine.
-        frame = inspect.currentframe().f_back
-        frame.f_trace = _tracer_func
+    frame = inspect.currentframe().f_back
+    if option_set('ignore_me'):
+        ignore_frame = frame
+    else:
+        ignore_frame = None
         pass
+
+    # Set to trace calling this routine.
+    frame.f_trace = _tracer_func
 
     # If the global tracer hook has been registered, the below will
     # trigger the hook to get called after the assignment.
     # That's why we set the hook for this frame to ignore tracing.
-    HOOKS[position:position] = [Trace_entry(trace_fn, event_set)]
+    HOOKS[position:position] = [Trace_entry(trace_fn, event_set,
+                                            ignore_frame)]
 
     if do_start: start()
     return len(HOOKS)
@@ -254,9 +250,12 @@ def stop():
 if __name__ == '__main__':
     trace_count = 25
 
+    import tracefilter
+    ignore_filter = tracefilter.TraceFilter([_find_hook, stop, remove_hook])
     def my_trace_dispatch(frame, event, arg):
-        global trace_count
+        global trace_count, ignore_filter
         'A sample trace function'
+        if ignore_filter.is_included(frame): return
         lineno = frame.f_lineno
         filename = frame.f_code.co_filename
         print "%s - %s:%d" % (event, filename, lineno),
