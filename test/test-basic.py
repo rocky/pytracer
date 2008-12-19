@@ -16,7 +16,7 @@ ignore_filter = tracefilter.TraceFilter([tracer.stop])
 def my_trace_dispatch(frame, event, arg):
     global trace_lines
     if ignore_filter.is_included(frame): 
-        return
+        return None
     Entry    = tracer.superTuple('line_entry', 'frame', 'event', 'arg', 'filename',
                                  'lineno', 'name')
     filename = frame.f_code.co_filename
@@ -24,7 +24,7 @@ def my_trace_dispatch(frame, event, arg):
     name     = frame.f_code.co_name
     entry    = Entry(frame, event, arg, filename, lineno, name)
     trace_lines += (entry,)
-    return
+    return my_trace_dispatch
 
 class TestTracer(unittest.TestCase):
 
@@ -35,12 +35,12 @@ class TestTracer(unittest.TestCase):
         return
 
     def test_option_set(self):
-        self.assertTrue(tracer._option_set({'opt': True}, 'opt', 
-                                           {'opt': False}))
-        self.assertFalse(tracer._option_set({'opt': True}, 'notthere', 
-                                            {'opt': True, 'notthere': False}))
-        self.assertEqual(None, tracer._option_set({'opt': True}, 'notthere', 
-                                                  {}))
+        self.assertTrue(tracer.option_set({'opt': True}, 'opt', 
+                                          {'opt': False}))
+        self.assertFalse(tracer.option_set({'opt': True}, 'notthere', 
+                                           {'opt': True, 'notthere': False}))
+        self.assertEqual(None, tracer.option_set({'opt': True}, 'notthere', 
+                                                 {}))
         return
 
     def test_basic(self):

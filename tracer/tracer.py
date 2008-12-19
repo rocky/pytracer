@@ -51,7 +51,7 @@ def _check_event_set(event_set):
         raise TypeError, 'event set is neither None nor a subset of ALL_EVENTS'
     return 
 
-def _find_hook(trace_fn):
+def find_hook(trace_fn):
     """Find `trace_fn' in `hooks', and return the index of it.
     return None is not found."""
     try:
@@ -60,7 +60,7 @@ def _find_hook(trace_fn):
         return None
     return i
 
-def _option_set(options, value, default_opts):
+def option_set(options, value, default_opts):
     if value in options:
         return options[value]
     elif value in default_opts:
@@ -113,9 +113,13 @@ def add_hook(trace_fn, options=DEFAULT_ADD_HOOK_OPTS):
     If `to_front' is given, the hook will be made at the front of the 
     list of hooks; otherwise it will be added at the end.
 
-    `event_set' if given and not None, is a list of events that trace_fn will
-    get run on. None indicates all possible events. If this parameter is
-    given, it is checked for validity.
+    `options' is a hash having potential keys: 'front', 'start',
+    'event_set', and 'ignore_me'. If event_set is included, it should
+    be  is a list of events that trace_fn will get run on. 'to_front'
+    adds the hook the the front of the list; the default is the back of the
+    list. 'start' is a boolean which indicates the hooks should be
+    started if they aren't already. 'ignore_me' indicates that the
+    calling function should be excluded from the tracing.
     """
 
     global STARTED_STATE
@@ -136,19 +140,19 @@ def add_hook(trace_fn, options=DEFAULT_ADD_HOOK_OPTS):
     except:
         raise TypeError
 
-    option_set = lambda key: _option_set(options, key, DEFAULT_ADD_HOOK_OPTS)
-    event_set = option_set( 'event_set')
+    get_option = lambda key: option_set(options, key, DEFAULT_ADD_HOOK_OPTS)
+    event_set = get_option( 'event_set')
     _check_event_set(event_set)
 
-    position = option_set('front')
+    position = get_option('front')
 
     # We set start_option via a function call *before* updating HOOKS
     # so we don't trigger a call after tracing this function is in
     # effect.
-    do_start = option_set('start')
+    do_start = get_option('start')
     
     frame = inspect.currentframe().f_back
-    if option_set('ignore_me'):
+    if get_option('ignore_me'):
         ignore_frame = frame
     else:
         ignore_frame = None
@@ -156,6 +160,9 @@ def add_hook(trace_fn, options=DEFAULT_ADD_HOOK_OPTS):
 
     # Set to trace calling this routine.
     frame.f_trace = _tracer_func
+
+    patch_caller = get_option('patch_caller')
+    if patch_caller: patch_caller.f_trace = _tracer_func
 
     # If the global tracer hook has been registered, the below will
     # trigger the hook to get called after the assignment.
@@ -199,7 +206,7 @@ def remove_hook(trace_fn, stop_if_empty=False):
     removal, the number of callback functions remaining is
     returned."""
     global HOOKS
-    i = _find_hook(trace_fn)
+    i = find_hook(trace_fn)
     if i is not None:
         del HOOKS[i]
         if 0 == len(HOOKS) and stop_if_empty:
@@ -218,13 +225,13 @@ def start(options = DEFAULT_START_OPTS):
     """Start using all previously-registered trace hooks. If `trace_fn'
     is not None, we'll search for that and add it, if it's not already
     added."""
-    option_set = lambda key: _option_set(options, key, DEFAULT_START_OPTS)
-    trace_fn = option_set('trace_fn')
+    get_option = lambda key: option_set(options, key, DEFAULT_START_OPTS)
+    trace_fn = get_option('trace_fn')
     if trace_fn is not None: 
-        add_hook(trace_fn, option_set('add_hook_opts'))
+        add_hook(trace_fn, get_option('add_hook_opts'))
         pass
 
-    if option_set('include_threads'):
+    if get_option('include_threads'):
         threading.settrace(_tracer_func)
         pass
 
@@ -251,11 +258,11 @@ if __name__ == '__main__':
     trace_count = 25
 
     import tracefilter
-    ignore_filter = tracefilter.TraceFilter([_find_hook, stop, remove_hook])
+    ignore_filter = tracefilter.TraceFilter([find_hook, stop, remove_hook])
     def my_trace_dispatch(frame, event, arg):
         global trace_count, ignore_filter
         'A sample trace function'
-        if ignore_filter.is_included(frame): return
+        if ignore_filter.is_included(frame): return None
         lineno = frame.f_lineno
         filename = frame.f_code.co_filename
         print "%s - %s:%d" % (event, filename, lineno),
@@ -272,7 +279,7 @@ if __name__ == '__main__':
         else:
             print "Max trace count reached - turning off tracing"
             return None
-        return
+        pass
 
     def foo(): print "foo"
 

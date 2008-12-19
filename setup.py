@@ -28,7 +28,7 @@ setup(
       long_description   = long_description,
       name               = modname,
       package_dir        = package_dir,
-      py_modules         = ['tracer'],
+      py_modules         = ['tracer', 'tracefilter'],
       test_suite         = 'nose.collector',
       url                = web,
       version            = version,
