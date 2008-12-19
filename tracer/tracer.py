@@ -28,7 +28,7 @@ def superTuple(typename, *attribute_names):
     return supertup
 
 Trace_entry = superTuple('Trace_entry', 'trace_fn', 'event_set',
-                         'ignore_frame')
+                         'ignore_frameid')
 
 HOOKS         = []    # List of Bunch(trace_fn, event_set)
                       # We run trace_fn if the event is in event_set.
@@ -82,14 +82,14 @@ def _tracer_func(frame, event, arg):
     # Go over all registered hooks
     for i in range(len(HOOKS)):
         hook = HOOKS[i]
-        if hook.ignore_frame == frame: continue
+        if hook.ignore_frameid == id(frame): continue
         if hook.event_set is None or event in hook.event_set:
             if not hook.trace_fn(frame, event, arg):
                 # sys.settrace's semantics provide that a if trace
                 # hook returns None or False, it should turn off
                 # tracing for that frame.
                 HOOKS[i] = Trace_entry(hook.trace_fn, hook.event_set,
-                                       frame)
+                                       id(frame))
             pass
         pass
     # print "event_seen %s, keep_trace %s" % (event_triggered, keep_trace,)
