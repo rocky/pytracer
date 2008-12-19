@@ -144,13 +144,19 @@ def add_hook(trace_fn, options=DEFAULT_ADD_HOOK_OPTS):
     """
 
     # Parameter checking:
+    if inspect.ismethod(trace_fn):
+        argcount = 4
+    else:
+        argcount = 3        
+        pass
     if not inspect.isfunction(trace_fn):
-        raise TypeError, "trace_fn should be something isfunction() blesses"
+        raise TypeError, (
+           "trace_fn should be something isfunction() or ismethod() blesses")
     try:
-        if 3 != trace_fn.func_code.co_argcount: 
+        if argcount != trace_fn.func_code.co_argcount: 
             raise TypeError, (
-                'trace fn should take exactly 3 arguments (%d given)' % (
-                        trace_fn.func_code.co_argcount))
+                'trace fn should take exactly %d arguments (takes %d)' % (
+                        argcount, trace_fn.func_code.co_argcount,))
     except:
         raise TypeError
 
