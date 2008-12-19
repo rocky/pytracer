@@ -146,12 +146,11 @@ def add_hook(trace_fn, options=DEFAULT_ADD_HOOK_OPTS):
     # Parameter checking:
     if inspect.ismethod(trace_fn):
         argcount = 4
-    else:
+    elif inspect.isfunction(trace_fn):
         argcount = 3        
-        pass
-    if not inspect.isfunction(trace_fn):
+    else:
         raise TypeError, (
-           "trace_fn should be something isfunction() or ismethod() blesses")
+            "trace_fn should be something isfunction() or ismethod() blesses")
     try:
         if argcount != trace_fn.func_code.co_argcount: 
             raise TypeError, (
@@ -166,12 +165,9 @@ def add_hook(trace_fn, options=DEFAULT_ADD_HOOK_OPTS):
 
     position = get_option('front')
 
-    # We set start_option via a function call *before* updating HOOKS
-    # so we don't trigger a call after tracing this function is in
-    # effect.
-    do_start = get_option('start')
-
+    # Setup so we don't trace into this routine. 
     ignore_frame = inspect.currentframe()
+
     # Should we trace frames below the one that we issued this 
     # call? 
     backlevel = get_option('backlevel')
@@ -199,7 +195,7 @@ def add_hook(trace_fn, options=DEFAULT_ADD_HOOK_OPTS):
     HOOKS[position:position] = [Trace_entry(trace_fn, event_set, 
                                             ignore_frame)]
     
-    if do_start: start()
+    if get_option('start'): start()
     return len(HOOKS)
     
 def clear_hooks():

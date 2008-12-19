@@ -14,6 +14,7 @@ trace_lines = []
 ignore_filter = tracefilter.TraceFilter([tracer.stop])
 
 def my_trace_dispatch(frame, event, arg):
+    """A pure-function trace hook"""
     global trace_lines
     if ignore_filter.is_included(frame): 
         return None
@@ -27,6 +28,10 @@ def my_trace_dispatch(frame, event, arg):
     return my_trace_dispatch
 
 class TestTracer(unittest.TestCase):
+
+    def method_trace_dispatch(self, frame, event, arg):
+        """A method-based trace hook"""
+        return method_trace_dispatch
 
     def setUp(self):
         global ignore_filter
@@ -99,6 +104,10 @@ class TestTracer(unittest.TestCase):
             self.assertTrue(True)
         else:
             self.assertFalse(True, "Wrong number of args")
+            pass
+
+        tracer.clear_hooks
+        self.assertEqual(1, tracer.add_hook(self.method_trace_dispatch))
         return
 
     # FIXME: reinstate after cleaning pytracer more
