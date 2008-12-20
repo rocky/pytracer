@@ -42,6 +42,7 @@ class TestTracer(unittest.TestCase):
     def test_option_set(self):
         self.assertTrue(tracer.option_set({'opt': True}, 'opt', 
                                           {'opt': False}))
+        self.assertTrue(tracer.option_set(None, 'opt', {'opt': True}))
         self.assertFalse(tracer.option_set({'opt': True}, 'notthere', 
                                            {'opt': True, 'notthere': False}))
         self.assertEqual(None, tracer.option_set({'opt': True}, 'notthere', 

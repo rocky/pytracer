@@ -63,14 +63,16 @@ def find_hook(trace_fn):
         return None
     return i
 
-def option_set(options, value, default_opts):
-    if value in options:
+def option_set(options, value, default_options):
+    if not options:
+        if value in default_options:
+            return default_options[value]
+        pass
+    elif value in options:
         return options[value]
-    elif value in default_opts:
-        return default_opts[value]
-    else:
-        return None
-    pass
+    elif value in default_options:
+        return default_options[value]
+    return None
 
 def _tracer_func(frame, event, arg):
     """The internal function set by sys.settrace which runs
