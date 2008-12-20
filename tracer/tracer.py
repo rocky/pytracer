@@ -110,7 +110,7 @@ DEFAULT_ADD_HOOK_OPTS = {
     'backlevel': 0
     }
 
-def add_hook(trace_fn, options=DEFAULT_ADD_HOOK_OPTS):
+def add_hook(trace_fn, options=None):
     """Add `trace_fn' to the list of callback functions that get run
     when tracing is turned on. The number of hook functions
     registered is returned. 
@@ -248,7 +248,7 @@ DEFAULT_START_OPTS = {
     'include_threads': False
     }
     
-def start(options = DEFAULT_START_OPTS):
+def start(options = None):
     """Start using all previously-registered trace hooks. If `trace_fn'
     is not None, we'll search for that and add it, if it's not already
     added."""
