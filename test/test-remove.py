@@ -17,6 +17,7 @@ class TestRemove(unittest.TestCase):
 
     def test_remove(self):
         self.assertEquals(None, tracer.remove_hook(tracer.null_trace_hook))
+        tracer.clear_hooks()
         self.assertEquals(None, tracer.remove_hook(tracer.null_trace_hook))
         return
 
