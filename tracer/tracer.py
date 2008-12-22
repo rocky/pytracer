@@ -240,7 +240,7 @@ def remove_hook(trace_fn, stop_if_empty=False):
             stop()
             return 0
         return len(HOOKS)
-    raise LookupError
+    return None
 
 DEFAULT_START_OPTS = {
     'trace_fn':  None, 
