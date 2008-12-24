@@ -43,3 +43,5 @@ classifiers =  ['Development Status :: 4 - Beta',
 download_url = 'tracer-%s.egg' % version
 
 package_dir = {'': 'tracer'}
+
+zip_safe = False # tracebacks in zip files are funky and not debuggable

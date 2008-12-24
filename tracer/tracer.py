@@ -7,7 +7,7 @@ functions.
 
 import operator, sys, inspect, threading, types
 
-# Python Cookbook Recipe 6.7
+# Python Cookbook Recipe 6.7. In Python 2.6 use collections.namedtuple
 def superTuple(typename, *attribute_names):
     " create and return a subclass of `tuple', with named attributes "
     # make the subclass with appropriate __new__ and __repr__ specials
