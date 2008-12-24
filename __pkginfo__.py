@@ -16,7 +16,7 @@
 
 modname = 'tracer'
 
-numversion = (0, 1, 0)
+numversion = (0, 2, 0)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
@@ -28,8 +28,6 @@ author = "Rocky Bernstein"
 author_email = "rocky@gnu.org"
 
 web = 'http://code.google.com/p/pytracer'
-# ftp = "ftp://ftp.gnu.org/pub/gnu/libcdio/%s-%s.tar.gz" % (modname, version)
-# mailinglist = "mailto:libcdio-pycdio-devel@gnu.org"
 
 classifiers =  ['Development Status :: 4 - Beta',
                 'Environment :: Console',
