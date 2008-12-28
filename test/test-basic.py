@@ -79,33 +79,14 @@ class TestTracer(unittest.TestCase):
 
     def test_errors(self):
         """Test various error conditions."""
-        # Don't know why assertRaises fails...
-        # self.assertRaises(TypeError, tracer.add_hook(5))
-        try:
-            tracer.add_hook(5)
-        except TypeError:
-            self.assertTrue(True)
-        else:
-            self.assertFalse(True, "Can't use int as a trace function")
+        # 5 is not a function
+        self.assertRaises(TypeError, tracer.add_hook, *(5,))
             
-        # Don't know why assertRaises fails...
-        # self.assertRaises(TypeError, tracer.add_hook(self.test_errors))
-        try:
-            tracer.add_hook(self.test_errors)
-        except TypeError:
-            self.assertTrue(True)
-        else:
-            self.assertFalse(True, 
-                             "self.test_errors is a method, not a function")
+        # test_errors has the wrong number of args
+        self.assertRaises(TypeError, tracer.add_hook, *(self.test_errors,))
 
         def wrong_fn_args(a, b): pass
-        try:
-            tracer.add_hook(wrong_fn_args)
-        except TypeError:
-            self.assertTrue(True)
-        else:
-            self.assertFalse(True, "Wrong number of args")
-            pass
+        self.assertRaises(TypeError, tracer.add_hook, *(wrong_fn_args,))
 
         tracer.clear_hooks
         self.assertEqual(1, tracer.add_hook(self.method_trace_dispatch))
