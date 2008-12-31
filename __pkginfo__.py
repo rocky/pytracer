@@ -16,7 +16,7 @@
 
 modname = 'tracer'
 
-numversion = (0, 2, 0)
+numversion = (0, 2, 1)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'

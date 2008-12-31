@@ -48,7 +48,7 @@ def null_trace_hook(frame, event, arg):
     """
     pass
 
-def _check_event_set(event_set):
+def check_event_set(event_set):
     " check `event_set' for validity. Raise TypeError if not valid "
     if event_set is not None and not event_set.issubset(ALL_EVENTS):
         raise TypeError, 'event set is neither None nor a subset of ALL_EVENTS'
@@ -163,7 +163,7 @@ def add_hook(trace_fn, options=None):
 
     get_option = lambda key: option_set(options, key, DEFAULT_ADD_HOOK_OPTS)
     event_set = get_option( 'event_set')
-    _check_event_set(event_set)
+    check_event_set(event_set)
 
     position = get_option('front')
 
