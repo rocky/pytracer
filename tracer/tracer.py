@@ -65,13 +65,12 @@ def find_hook(trace_fn):
 
 def option_set(options, value, default_options):
     if not options:
-        if value in default_options:
-            return default_options[value]
-        pass
+        return default_options.get(value)
     elif value in options:
         return options[value]
-    elif value in default_options:
-        return default_options[value]
+    else:
+        return default_options.get(value)
+    # Not reached
     return None
 
 def _tracer_func(frame, event, arg):
