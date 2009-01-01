@@ -26,7 +26,12 @@ def fs2set(frames_or_fns):
     return f_code_set
 
 def to_f_code(f):
-    return inspect.getmembers(f, inspect.iscode)[0][1]
+    if hasattr(f, 'func_code'): 
+        return f.func_code
+    else:
+        t = inspect.getmembers(f, inspect.iscode)
+        if len(t) > 0: return t[0][1]
+        return None
 
 class TraceFilter(): 
     """ A class that can be used to test whether
@@ -51,8 +56,7 @@ class TraceFilter():
     def add_include(self, frame_or_fn):
         """Remove `frame_or_fn' from the list of functions to include"""
         try:
-            add_to_set(frame_or_fn, self.include_f_codes)
-            return True
+            return add_to_set(frame_or_fn, self.include_f_codes)
         except:
             return False
         pass
@@ -70,10 +74,12 @@ class TraceFilter():
 # Demo it
 if __name__ == '__main__':
     filter = TraceFilter([add_to_set])
+    curframe = inspect.currentframe()
+    f_code = to_f_code(curframe)
     print "Created filter for 'add_to_set'"
     print filter.include_f_codes
     print "filter includes 'add_to_set'?", filter.is_included(add_to_set)
-    print "Current frame includes 'add_to_set'?", filter.is_included(inspect.currentframe())
+    print "Current frame includes 'add_to_set'?", filter.is_included(curframe)
     print "filter includes to_f_code?", filter.is_included(to_f_code)
     print "Removing filter for 'add_to_set'"
     filter.remove_include(add_to_set)
