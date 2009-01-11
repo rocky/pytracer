@@ -39,6 +39,13 @@ class TestTracer(unittest.TestCase):
         ignore_tracefilter = tracefilter.TraceFilter()
         return
 
+    def test_event2short_sanity(self):
+        t = tracer.EVENT2SHORT.keys()
+        t.sort()
+        self.assertEqual(tracer.ALL_EVENT_NAMES, tuple(t), 
+                         "EVENT2SHORT.keys() should match ALL_EVENT_NAMES")
+        return
+
     def test_option_set(self):
         self.assertTrue(tracer.option_set({'opt': True}, 'opt', 
                                           {'opt': False}))

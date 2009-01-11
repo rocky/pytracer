@@ -37,6 +37,16 @@ STARTED_STATE = False # True if we are tracing.
 
 ALL_EVENT_NAMES   = ('c_call', 'c_exception', 'c_return', 'call', 
                      'exception', 'line', 'return',)
+
+# If you want short strings for the above event names
+EVENT2SHORT       = {'c_call'     : 'Cc', 
+                     'c_exception': 'C!', 
+                     'c_return'   : 'Cr', 
+                     'call'       : '->', 
+                     'exception'  : '!!', 
+                     'line'       : '--', 
+                     'return'     : '<-'}
+
 ALL_EVENTS    = frozenset(ALL_EVENT_NAMES)
 
 TRACE_SUSPEND = False
@@ -281,6 +291,9 @@ def stop():
 
 # Demo it
 if __name__ == '__main__':
+
+    t = EVENT2SHORT.keys(); t.sort()
+    print "EVENT2SHORT.keys() == ALL_EVENT_NAMES: ", tuple(t) == ALL_EVENT_NAMES
     trace_count = 10
 
     import tracefilter
