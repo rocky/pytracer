@@ -39,9 +39,9 @@ ALL_EVENT_NAMES   = ('c_call', 'c_exception', 'c_return', 'call',
                      'exception', 'line', 'return',)
 
 # If you want short strings for the above event names
-EVENT2SHORT       = {'c_call'     : 'Cc', 
+EVENT2SHORT       = {'c_call'     : 'C>', 
                      'c_exception': 'C!', 
-                     'c_return'   : 'Cr', 
+                     'c_return'   : 'C<', 
                      'call'       : '->', 
                      'exception'  : '!!', 
                      'line'       : '--', 
