@@ -20,7 +20,7 @@ numversion = (0, 2, 2)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
-copyright = '''Copyright (C) 2008 Rocky Bernstein <rocky@gnu.org>.'''
+copyright = '''Copyright (C) 2008, 2009 Rocky Bernstein <rocky@gnu.org>.'''
 
 short_desc = 'Centralized sys.settrace management'
 
