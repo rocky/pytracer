@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #   Copyright (C) 2008, 2009 Rocky Bernstein <rocky@gnu.org>
 #
 #   This program is free software: you can redistribute it and/or modify
@@ -64,6 +65,7 @@ EVENT2SHORT       = {'c_call'     : 'C>',
 ALL_EVENTS    = frozenset(ALL_EVENT_NAMES)
 
 TRACE_SUSPEND = False
+debug = False  # Setting true 
 
 def null_trace_hook(frame, event, arg): 
     """ A trace hook that doesn't do anything. Can use this to "turn off"
@@ -101,7 +103,10 @@ def _tracer_func(frame, event, arg):
     """The internal function set by sys.settrace which runs
     all of the user-registered trace hook functions."""
 
-    global TRACE_SUSPEND, HOOKS
+    global TRACE_SUSPEND, HOOKS, debug
+    if debug:
+        print "%s -- %s:%d" % (event, frame.f_code.co_filename, 
+                               frame.f_lineno)
     if TRACE_SUSPEND: return _tracer_func
 
     # Go over all registered hooks
@@ -162,7 +167,7 @@ def add_hook(trace_fn, options=None):
     'backlevel' an integer indicates that the calling should continue
     backwards in return call frames and is the number of levels to
     skip ignore. 0 means that the caller of add_hook() is traced as
-    well as a all new frames the caller subsequently calls. 1 means
+    well as all new frames the caller subsequently calls. 1 means
     that all the caller of add_hook() is ignored but prior parent
     frames are traced, and None means that no previous parent frames
     should be traced.
