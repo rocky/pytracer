@@ -324,6 +324,8 @@ if __name__ == '__main__':
         lineno = frame.f_lineno
         filename = frame.f_code.co_filename
         print "%s - %s:%d" % (event, filename, lineno),
+        if 'call' == event:
+            print (', %s()' % frame.f_code.co_name),
         if arg: 
             print "arg", arg
         else:
