@@ -109,6 +109,12 @@ def _tracer_func(frame, event, arg):
                                frame.f_lineno)
     if TRACE_SUSPEND: return _tracer_func
 
+    # Leave a breadcrumb for this routine so we can know by 
+    # frame inspection where the debugger ends. "info threads" 
+    # by default for example wants to also not show the trace_hook
+    # call from pytracer.
+    tracer_func_frame = inspect.currentframe()
+
     # Go over all registered hooks
     for i in range(len(HOOKS)):
         hook = HOOKS[i]
