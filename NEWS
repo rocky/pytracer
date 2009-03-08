@@ -1,0 +1,16 @@
+0.2.2 - 03-08-09 Ron Frankel - 1 release
+
+* Add EVENT2SHORT: event name to a short string used in pydbgr 
+  For example, 'call' is '->'.
+* Leave a mark in the frame so clients like pydbgr can know to omit
+  listing this kind of frame (for in thread debugging)
+* Add a debug flag for showing all events that come through.
+* Make GPL v3 
+
+Above changes in are support of pydbgr
+
+0.2.0 - 12-25-08
+
+* Initial googlecode release
+
+
