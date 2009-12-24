@@ -138,7 +138,7 @@ def _tracer_func(frame, event, arg):
 
 
 DEFAULT_ADD_HOOK_OPTS = {
-    'front': False, 
+    'position': -1,  # Which really means "back of list"
     'start': False, 
     'event_set': ALL_EVENTS, 
     'backlevel': 0
@@ -153,10 +153,7 @@ def add_hook(trace_fn, options=None):
     which takes 3 parameters: a frame, an event, and an arg or which
     sometimes arg is None.
 
-    If `to_front' is given, the hook will be made at the front of the 
-    list of hooks; otherwise it will be added at the end.
-
-    `options' is a hash having potential keys: 'front', 'start',
+    `options' is a hash having potential keys: 'position', 'start',
     'event_set', and 'backlevel'. 
 
     If the event_set option-key is included, it should be is an event
@@ -164,8 +161,10 @@ def add_hook(trace_fn, options=None):
     create this set. ALL_EVENT_NAMES is a tuple contain a list of
     the event names. ALL_EVENTS is a frozenset of these.
 
-    'to_front' adds the hook the the front of the list; the default is
-    the back of the list. 
+    'position' is the index of where the hook should be place in the
+    list, so 0 is first and -1 *after* is last item; the default is
+    the very back of the list (-1). -2 is *after* the next to last
+    item.
 
     'start' is a boolean which indicates the hooks should be started
     if they aren't already. 
@@ -199,8 +198,6 @@ def add_hook(trace_fn, options=None):
     event_set = get_option( 'event_set')
     check_event_set(event_set)
 
-    position = get_option('front')
-
     # Setup so we don't trace into this routine. 
     ignore_frame = inspect.currentframe()
 
@@ -228,8 +225,20 @@ def add_hook(trace_fn, options=None):
     # If the global tracer hook has been registered, the below will
     # trigger the hook to get called after the assignment.
     # That's why we set the hook for this frame to ignore tracing.
-    HOOKS[position:position] = [Trace_entry(trace_fn, event_set, 
-                                            ignore_frame)]
+    entry = Trace_entry(trace_fn, event_set, ignore_frame)
+
+    # based on position, figure out where to put the hook.
+    position = get_option('position')
+    if position == -1: 
+        HOOKS.append(entry)
+    else:
+        if position < -1:
+            # Recall we need -1 for *after* the end so -2 is normally what is
+            # called -1.
+            position += 1
+            pass
+        HOOKS[position:position] = [entry]
+        pass
     
     if get_option('start'): start()
     return len(HOOKS)

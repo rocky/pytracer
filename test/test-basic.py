@@ -58,6 +58,7 @@ class TestTracer(unittest.TestCase):
 
     def test_basic(self):
         """Basic sanity and status testing."""
+        tracer.HOOKS = []
         self.assertEqual(0, tracer.size())
         self.assertEqual(False, tracer.is_started())
         tracer.start()
