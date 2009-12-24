@@ -1,4 +1,4 @@
-# Copyright (C) 2008 Rocky Bernstein <rocky@gnu.org>
+# Copyright (C) 2008, 2009 Rocky Bernstein <rocky@gnu.org>
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,21 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """pytracer packaging information"""
 
-modname = 'tracer'
-
-numversion = (0, 2, 2)
-version = '.'.join([str(num) for num in numversion])
-
-license = 'GPL'
-copyright = '''Copyright (C) 2008, 2009 Rocky Bernstein <rocky@gnu.org>.'''
-
-short_desc = 'Centralized sys.settrace management'
-
-author = "Rocky Bernstein"
-author_email = "rocky@gnu.org"
-
-web = 'http://code.google.com/p/pytracer'
-
+copyright   = '''Copyright (C) 2008, 2009 Rocky Bernstein <rocky@gnu.org>.'''
 classifiers =  ['Development Status :: 4 - Beta',
                 'Environment :: Console',
                 'Intended Audience :: Developers',
@@ -39,6 +25,23 @@ classifiers =  ['Development Status :: 4 - Beta',
                 'Topic :: Software Development :: Libraries :: Python Modules',
                 ]
 
+# The rest in alphabetic order
+author       = "Rocky Bernstein"
+author_email = "rocky@gnu.org"
+
+ftp_url      = None
+license      = 'GPL'
+modname      = 'tracer'
+
+short_desc = 'Centralized sys.settrace management'
+version    = open('VERSION').readline().rstrip('\n')
+web        = 'http://code.google.com/p/pytracer'
+
 package_dir = {'': 'tracer'}
 
 zip_safe = False # tracebacks in zip files are funky and not debuggable
+
+import os
+def read(*rnames):
+    return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
+long_description   = ( read("README.txt") + '\n\n' +  read("NEWS") )
