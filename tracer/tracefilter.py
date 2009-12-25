@@ -12,10 +12,10 @@
 #
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-""" Some of the customized filtering desired in tracing to some simple
+"""Some of the customized filtering desired in tracing to some simple
 routines.
 
-What test for inclusion based on the code for a frame or a function. 
+What test for inclusion based on the code for a frame or a function.
 """
 
 import inspect
@@ -41,15 +41,15 @@ def fs2set(frames_or_fns):
     return f_code_set
 
 def to_f_code(f):
-    if hasattr(f, 'func_code'): 
+    if hasattr(f, 'func_code'):
         return f.func_code
     else:
         t = inspect.getmembers(f, inspect.iscode)
         if len(t) > 0: return t[0][1]
         return None
 
-class TraceFilter(): 
-    """ A class that can be used to test whether
+class TraceFilter():
+    """A class that can be used to test whether
     certain frames or functions should be skipped/included in tracing.
     """
     def __init__(self, include_fns = [], continue_return_frame = None):
@@ -63,7 +63,7 @@ class TraceFilter():
         except:
             return False
         pass
-        
+
     def clear_include(self):
         self.include_f_codes = set()
         return

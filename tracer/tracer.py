@@ -47,38 +47,38 @@ Trace_entry = superTuple('Trace_entry', 'trace_fn', 'event_set',
 
 HOOKS         = []    # List of Bunch(trace_fn, event_set)
                       # We run trace_fn if the event is in event_set.
-STARTED_STATE = False # True if we are tracing. 
+STARTED_STATE = False # True if we are tracing.
                       # FIXME: in 2.6 we can use sys.gettrace
 
-ALL_EVENT_NAMES   = ('c_call', 'c_exception', 'c_return', 'call', 
+ALL_EVENT_NAMES   = ('c_call', 'c_exception', 'c_return', 'call',
                      'exception', 'line', 'return',)
 
 # If you want short strings for the above event names
-EVENT2SHORT       = {'c_call'     : 'C>', 
-                     'c_exception': 'C!', 
-                     'c_return'   : 'C<', 
-                     'call'       : '->', 
-                     'exception'  : '!!', 
-                     'line'       : '--', 
+EVENT2SHORT       = {'c_call'     : 'C>',
+                     'c_exception': 'C!',
+                     'c_return'   : 'C<',
+                     'call'       : '->',
+                     'exception'  : '!!',
+                     'line'       : '--',
                      'return'     : '<-'}
 
 ALL_EVENTS    = frozenset(ALL_EVENT_NAMES)
 
 TRACE_SUSPEND = False
-debug = False  # Setting true 
+debug = False  # Setting true
 
-def null_trace_hook(frame, event, arg): 
-    """ A trace hook that doesn't do anything. Can use this to "turn off"
+def null_trace_hook(frame, event, arg):
+    """A trace hook that doesn't do anything. Can use this to "turn off"
     tracing by setting frame.f_trace. Setting sys.settrace(None) sometimes
     doesn't work...
     """
     pass
 
 def check_event_set(event_set):
-    " check `event_set' for validity. Raise TypeError if not valid "
+    """Check `event_set' for validity. Raise TypeError if not valid."""
     if event_set is not None and not event_set.issubset(ALL_EVENTS):
         raise TypeError, 'event set is neither None nor a subset of ALL_EVENTS'
-    return 
+    return
 
 def find_hook(trace_fn):
     """Find `trace_fn' in `hooks', and return the index of it.
@@ -105,12 +105,12 @@ def _tracer_func(frame, event, arg):
 
     global TRACE_SUSPEND, HOOKS, debug
     if debug:
-        print "%s -- %s:%d" % (event, frame.f_code.co_filename, 
+        print "%s -- %s:%d" % (event, frame.f_code.co_filename,
                                frame.f_lineno)
     if TRACE_SUSPEND: return _tracer_func
 
-    # Leave a breadcrumb for this routine so we can know by 
-    # frame inspection where the debugger ends. "info threads" 
+    # Leave a breadcrumb for this routine so we can know by
+    # frame inspection where the debugger ends. "info threads"
     # by default for example wants to also not show the trace_hook
     # call from pytracer.
     tracer_func_frame = inspect.currentframe()
@@ -129,32 +129,32 @@ def _tracer_func(frame, event, arg):
             pass
         pass
     # print "event_seen %s, keep_trace %s" % (event_triggered, keep_trace,)
-        
+
     # From sys.settrace info: The local trace function
     # should return a reference to itself (or to another function
     # for further tracing in that scope), or None to turn off
-    # tracing in that scope. 
+    # tracing in that scope.
     return _tracer_func
 
 
 DEFAULT_ADD_HOOK_OPTS = {
     'position': -1,  # Which really means "back of list"
-    'start': False, 
-    'event_set': ALL_EVENTS, 
+    'start': False,
+    'event_set': ALL_EVENTS,
     'backlevel': 0
     }
 
 def add_hook(trace_fn, options=None):
     """Add `trace_fn' to the list of callback functions that get run
     when tracing is turned on. The number of hook functions
-    registered is returned. 
+    registered is returned.
 
     A check is made on `trace_fn' to make sure it is a function
     which takes 3 parameters: a frame, an event, and an arg or which
     sometimes arg is None.
 
     `options' is a hash having potential keys: 'position', 'start',
-    'event_set', and 'backlevel'. 
+    'event_set', and 'backlevel'.
 
     If the event_set option-key is included, it should be is an event
     set that trace_fn will get run on. Use set() or frozenset() to
@@ -167,7 +167,7 @@ def add_hook(trace_fn, options=None):
     item.
 
     'start' is a boolean which indicates the hooks should be started
-    if they aren't already. 
+    if they aren't already.
 
     'backlevel' an integer indicates that the calling should continue
     backwards in return call frames and is the number of levels to
@@ -182,12 +182,12 @@ def add_hook(trace_fn, options=None):
     if inspect.ismethod(trace_fn):
         argcount = 4
     elif inspect.isfunction(trace_fn):
-        argcount = 3        
+        argcount = 3
     else:
         raise TypeError, (
             "trace_fn should be something isfunction() or ismethod() blesses")
     try:
-        if argcount != trace_fn.func_code.co_argcount: 
+        if argcount != trace_fn.func_code.co_argcount:
             raise TypeError, (
                 'trace fn should take exactly %d arguments (takes %d)' % (
                         argcount, trace_fn.func_code.co_argcount,))
@@ -198,11 +198,11 @@ def add_hook(trace_fn, options=None):
     event_set = get_option( 'event_set')
     check_event_set(event_set)
 
-    # Setup so we don't trace into this routine. 
+    # Setup so we don't trace into this routine.
     ignore_frame = inspect.currentframe()
 
-    # Should we trace frames below the one that we issued this 
-    # call? 
+    # Should we trace frames below the one that we issued this
+    # call?
     backlevel = get_option('backlevel')
     if backlevel is not None:
         if types.IntType != type(backlevel):
@@ -214,13 +214,13 @@ def add_hook(trace_fn, options=None):
             backlevel -= 1
             frame = frame.f_back
             pass
-        
+
         # Set to trace all frames below this
         while frame:
             frame.f_trace = _tracer_func
             frame = frame.f_back
             pass
-        
+
         pass
     # If the global tracer hook has been registered, the below will
     # trigger the hook to get called after the assignment.
@@ -229,7 +229,7 @@ def add_hook(trace_fn, options=None):
 
     # based on position, figure out where to put the hook.
     position = get_option('position')
-    if position == -1: 
+    if position == -1:
         HOOKS.append(entry)
     else:
         if position < -1:
@@ -239,10 +239,10 @@ def add_hook(trace_fn, options=None):
             pass
         HOOKS[position:position] = [entry]
         pass
-    
+
     if get_option('start'): start()
     return len(HOOKS)
-    
+
 def clear_hooks():
     ' clear all trace hooks '
     global HOOKS
@@ -257,13 +257,13 @@ def clear_hooks_and_stop():
     return
 
 def size():
-    ' return the number of trace hooks installed, an integer. '
+    """Return the number of trace hooks installed, an integer."""
     global HOOKS
     return len(HOOKS)
 
 def is_started():
-    """Return true if tracing has been started. Until we assume Python 2.6
-    or better, keeping track is done by internal tracking. Thus calls to 
+    """Return True if tracing has been started. Until we assume Python 2.6
+    or better, keeping track is done by internal tracking. Thus calls to
     sys.settrace outside of Tracer won't be detected :-(
     """
     global STARTED_STATE
@@ -272,7 +272,7 @@ def is_started():
 def remove_hook(trace_fn, stop_if_empty=False):
     """Remove `trace_fn' from list of callback functions run when
     tracing is turned on. If `trace_fn' is not in the list of
-    callback functions, None is ruturned. On successful
+    callback functions, None is returned. On successful
     removal, the number of callback functions remaining is
     returned."""
     global HOOKS
@@ -286,18 +286,18 @@ def remove_hook(trace_fn, stop_if_empty=False):
     return None
 
 DEFAULT_START_OPTS = {
-    'trace_fn':  None, 
+    'trace_fn':  None,
     'add_hook_opts': DEFAULT_ADD_HOOK_OPTS,
     'include_threads': False
     }
-    
+
 def start(options = None):
     """Start using all previously-registered trace hooks. If `trace_fn'
     is not None, we'll search for that and add it, if it's not already
     added."""
     get_option = lambda key: option_set(options, key, DEFAULT_START_OPTS)
     trace_fn = get_option('trace_fn')
-    if trace_fn is not None: 
+    if trace_fn is not None:
         add_hook(trace_fn, get_option('add_hook_opts'))
         pass
 
@@ -305,7 +305,7 @@ def start(options = None):
         threading.settrace(_tracer_func)
         pass
 
-    # FIXME: in 2.6, there is the possibility for chaining 
+    # FIXME: in 2.6, there is the possibility for chaining
     # existing hooks by using sys.gettrace().
 
     if sys.settrace(_tracer_func) is None:
@@ -341,7 +341,7 @@ if __name__ == '__main__':
         print "%s - %s:%d" % (event, filename, lineno),
         if 'call' == event:
             print (', %s()' % frame.f_code.co_name),
-        if arg: 
+        if arg:
             print "arg", arg
         else:
             print
@@ -377,7 +377,7 @@ if __name__ == '__main__':
     print "** Tracing started: %s" % is_started()
 
     print "** Tracing only 'call' now..."
-    add_hook(my_trace_dispatch, 
+    add_hook(my_trace_dispatch,
              {'start': True, 'event_set': frozenset(('call',))})
     foo()
     stop()
