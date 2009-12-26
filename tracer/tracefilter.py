@@ -12,11 +12,7 @@
 #
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Some of the customized filtering desired in tracing to some simple
-routines.
-
-What test for inclusion based on the code for a frame or a function.
-"""
+"""Filter out trace events based on the event's frame or a function code."""
 
 import inspect
 
