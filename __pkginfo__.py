@@ -34,7 +34,12 @@ license      = 'GPL'
 modname      = 'tracer'
 
 short_desc   = 'Centralized sys.settrace management'
-version      = open('VERSION').readline().rstrip('\n')
+import os.path, sys
+from import_relative import get_srcdir
+
+# VERSION.py sets variable VERSION.
+execfile(os.path.join(get_srcdir(), 'VERSION.py'))
+version      = VERSION
 web          = 'http://code.google.com/p/pytracer'
 
 package_dir  = {'': 'tracer'}
