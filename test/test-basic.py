@@ -40,8 +40,7 @@ class TestTracer(unittest.TestCase):
         return
 
     def test_event2short_sanity(self):
-        t = tracer.EVENT2SHORT.keys()
-        t.sort()
+        t = sorted(tracer.EVENT2SHORT.keys())
         self.assertEqual(tracer.ALL_EVENT_NAMES, tuple(t), 
                          "EVENT2SHORT.keys() should match ALL_EVENT_NAMES")
         return
@@ -102,7 +101,7 @@ class TestTracer(unittest.TestCase):
 
     # FIXME: reinstate after cleaning pytracer more
     def test_trace(self):
-        """Test that trace hook is triggering event callbacks.(No filtering.)"""
+        """Test that trace hook is triggering event callbacks without filtering."""
         tracer.clear_hooks_and_stop()
         self.assertEqual(1, tracer.add_hook(my_trace_dispatch, 
                                             {'start': True,

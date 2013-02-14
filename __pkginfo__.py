@@ -36,7 +36,7 @@ modname      = 'tracer'
 short_desc   = 'Centralized sys.settrace management'
 import os.path
 # VERSION.py sets variable VERSION.
-execfile(os.path.join(os.path.dirname(__file__), 'VERSION.py'))
+exec(compile(open(os.path.join(os.path.dirname(__file__), 'VERSION.py')).read(), os.path.join(os.path.dirname(__file__), 'VERSION.py'), 'exec'))
 
 version      = VERSION
 web          = 'http://code.google.com/p/pytracer'

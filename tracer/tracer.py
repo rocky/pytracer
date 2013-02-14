@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#   Copyright (C) 2008, 2009 Rocky Bernstein <rocky@gnu.org>
+#   Copyright (C) 2008-2009, 2013 Rocky Bernstein <rocky@gnu.org>
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -31,8 +31,8 @@ def superTuple(typename, *attribute_names):
         __slots__ = ()   # save memory, we don't need a per-instance dict
         def __new__(cls, *args):
             if len(args) !=nargs:
-                raise TypeError, '%s takes exactly %d arguments (%d given)' % (
-                    typename, nargs, len(args))
+                raise TypeError('%s takes exactly %d arguments (%d given)' % (
+                    typename, nargs, len(args)))
             return tuple.__new__(cls, args)
         def __repr__(self):
             return '%s(%s)' % (typename, ', '.join(map(repr, self)))
@@ -77,7 +77,7 @@ def null_trace_hook(frame, event, arg):
 def check_event_set(event_set):
     """Check `event_set' for validity. Raise TypeError if not valid."""
     if event_set is not None and not event_set.issubset(ALL_EVENTS):
-        raise TypeError, 'event set is neither None nor a subset of ALL_EVENTS'
+        raise TypeError('event set is neither None nor a subset of ALL_EVENTS')
     return
 
 def find_hook(trace_fn):
@@ -105,8 +105,8 @@ def _tracer_func(frame, event, arg):
 
     global TRACE_SUSPEND, HOOKS, debug
     if debug:
-        print "%s -- %s:%d" % (event, frame.f_code.co_filename,
-                               frame.f_lineno)
+        print("%s -- %s:%d" % (event, frame.f_code.co_filename,
+                               frame.f_lineno))
     if TRACE_SUSPEND: return _tracer_func
 
     # Leave a breadcrumb for this routine so we can know by
@@ -184,13 +184,13 @@ def add_hook(trace_fn, options=None):
     elif inspect.isfunction(trace_fn):
         argcount = 3
     else:
-        raise TypeError, (
-            "trace_fn should be something isfunction() or ismethod() blesses")
+        raise TypeError((
+            "trace_fn should be something isfunction() or ismethod() blesses"))
     try:
-        if argcount != trace_fn.func_code.co_argcount:
-            raise TypeError, (
+        if argcount != trace_fn.__code__.co_argcount:
+            raise TypeError(
                 'trace fn should take exactly %d arguments (takes %d)' % (
-                        argcount, trace_fn.func_code.co_argcount,))
+                        argcount, trace_fn.__code__.co_argcount,))
     except:
         raise TypeError
 
@@ -205,8 +205,8 @@ def add_hook(trace_fn, options=None):
     # call?
     backlevel = get_option('backlevel')
     if backlevel is not None:
-        if types.IntType != type(backlevel):
-            raise TypeError, (
+        if int != type(backlevel):
+            raise TypeError(
                 'backlevel should be an integer type, is %s' % (
                     backlevel))
         frame = ignore_frame
@@ -313,7 +313,7 @@ def start(options = None):
         STARTED_STATE = True
         return len(HOOKS)
     if trace_fn is not None: remove_hook(trace_fn)
-    raise NotImplementedError, "sys.settrace() doesn't seem to be implemented"
+    raise NotImplementedError("sys.settrace() doesn't seem to be implemented")
 
 def stop():
     """Stop all trace hooks"""
@@ -321,13 +321,14 @@ def stop():
         global HOOKS, STARTED_STATE
         STARTED_STATE = False
         return len(HOOKS)
-    raise NotImplementedError, "sys.settrace() doesn't seem to be implemented"
+    raise NotImplementedError("sys.settrace() doesn't seem to be implemented")
 
 # Demo it
 if __name__ == '__main__':
 
-    t = EVENT2SHORT.keys(); t.sort()
-    print "EVENT2SHORT.keys() == ALL_EVENT_NAMES: ", tuple(t) == ALL_EVENT_NAMES
+    t = list(EVENT2SHORT.keys()); t.sort()
+    print("EVENT2SHORT.keys() == ALL_EVENT_NAMES: %s"
+          % (tuple(t) == ALL_EVENT_NAMES))
     trace_count = 10
 
     import tracefilter
@@ -338,13 +339,13 @@ if __name__ == '__main__':
         if ignore_filter.is_included(frame): return None
         lineno = frame.f_lineno
         filename = frame.f_code.co_filename
-        print "%s - %s:%d" % (event, filename, lineno),
+        s = "%s - %s:%d" % (event, filename, lineno)
         if 'call' == event:
-            print (', %s()' % frame.f_code.co_name),
+            s += (', %s()' % frame.f_code.co_name)
         if arg:
-            print "arg", arg
+            print("%s arg %s" % (s, arg))
         else:
-            print
+            print(s)
             pass
 
         # print "event: %s frame %s arg %s\n" % [event, frame, arg]
@@ -352,17 +353,17 @@ if __name__ == '__main__':
             trace_count -= 1
             return my_trace_dispatch
         else:
-            print "Max trace count reached - turning off tracing"
+            print("Max trace count reached - turning off tracing")
             return None
         pass
 
-    def foo(): print "foo"
+    def foo(): print("foo")
 
-    print "** Tracing started before start(): %s" % is_started()
+    print("** Tracing started before start(): %s" % is_started())
 
     start() # tracer.start() outside of this file
 
-    print "** Tracing started after start(): %s" % is_started()
+    print("** Tracing started after start(): %s" % is_started())
     add_hook(my_trace_dispatch) # tracer.add_hook(...) outside
     eval("1+2")
     stop()
@@ -371,12 +372,12 @@ if __name__ == '__main__':
     foo()
     z = 5
     for i in range(6):
-        print i
+        print(i)
     trace_count = 25
     remove_hook(my_trace_dispatch, stop_if_empty=True)
-    print "** Tracing started: %s" % is_started()
+    print("** Tracing started: %s" % is_started())
 
-    print "** Tracing only 'call' now..."
+    print("** Tracing only 'call' now...")
     add_hook(my_trace_dispatch,
              {'start': True, 'event_set': frozenset(('call',))})
     foo()

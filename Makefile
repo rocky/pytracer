@@ -1,12 +1,13 @@
 # Compatibility for us old-timers.
+PYTHON ?= python
 PHONY=check clean dist distclean test
 all: check
 check: 
-	python ./setup.py nosetests
+	$(PYTHON) ./setup.py nosetests
 clean: 
-	python ./setup.py $@
+	$(PYTHON) ./setup.py $@
 dist: 
-	python ./setup.py sdist bdist
+	$(PYTHON) ./setup.py sdist bdist
 
 # It is too much work to figure out how to add a new command to distutils
 # to do the following. I'm sure distutils will someday get there.
@@ -14,7 +15,7 @@ DISTCLEAN_FILES = build dist *.egg-info *.pyc *.so py*.py
 distclean: clean
 	-rm -fr $(DISTCLEAN_FILES) || true
 install: 
-	python ./setup.py install
+	$(PYTHON) ./setup.py install
 test: check
 
 ChangeLog:

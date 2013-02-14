@@ -1,4 +1,4 @@
-#   Copyright (C) 2008, 2009 Rocky Bernstein <rocky@gnu.org>
+#   Copyright (C) 2008-2009, 2013 Rocky Bernstein <rocky@gnu.org>
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ def fs2set(frames_or_fns):
 
 def to_f_code(f):
     if hasattr(f, 'func_code'):
-        return f.func_code
+        return f.__code__
     else:
         t = inspect.getmembers(f, inspect.iscode)
         if len(t) > 0: return t[0][1]
@@ -87,13 +87,14 @@ if __name__ == '__main__':
     filter = TraceFilter([add_to_set])
     curframe = inspect.currentframe()
     f_code = to_f_code(curframe)
-    print "Created filter for 'add_to_set'"
-    print filter.include_f_codes
-    print "filter includes 'add_to_set'?", filter.is_included(add_to_set)
-    print "Current frame includes 'add_to_set'?", filter.is_included(curframe)
-    print "filter includes to_f_code?", filter.is_included(to_f_code)
-    print "Removing filter for 'add_to_set'"
+    print("Created filter for 'add_to_set'")
+    print(filter.include_f_codes)
+    print("filter includes 'add_to_set'?: %s" % filter.is_included(add_to_set))
+    print("Current frame includes 'add_to_set'?? %s" %
+          filter.is_included(curframe))
+    print("filter includes to_f_code?: %s" % filter.is_included(to_f_code))
+    print("Removing filter for 'add_to_set'.")
     filter.remove_include(add_to_set)
-    print "filter includes 'add_to_set'?", filter.is_included(add_to_set)
+    print("filter includes 'add_to_set'?: %s" % filter.is_included(add_to_set))
     filter.clear_include()
     pass
