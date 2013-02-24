@@ -1,0 +1,352 @@
+2013-02-14  rocky <rocky@gnu.com>
+
+	* Makefile, NEWS: Set reasonable default values for PYTHON and
+	GIT2CL
+
+2013-02-14  rocky <rocky@gnu.com>
+
+	* .gitignore, Makefile, __pkginfo__.py, test/test-basic.py,
+	tracer/.cvsignore, tracer/tracefilter.py, tracer/tracer.py: Make 3k
+	compatible
+
+2013-01-03  rocky <rocky@gnu.org>
+
+	* .cvsignore, svn2cl_usermap: Administrivia
+
+2010-11-02  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* NEWS, VERSION.py, __pkginfo__.py: Shouldn't rely on
+	import_relative in packaging since the rest doesn't depend on it.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@64
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2010-10-28  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* NEWS, VERSION, VERSION.py, __pkginfo__.py: Get ready for release.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@62
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2010-01-26  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* MANIFEST.in, NEWS, VERSION, __pkginfo__.py: Add version file into
+	source distribution. Issue #4.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@61
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-12-26  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* tracer/tracefilter.py: Update doc string.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@60
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-12-25  yarikoptic <yarikoptic@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* README.txt, setup.py, tracer/tracefilter.py, tracer/tracer.py: non
+	functional: trailing whitespaces, spellcheck, uniformization of
+	docstrings git-svn-id: https://pytracer.googlecode.com/svn/trunk@59
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-12-25  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* NEWS: Typo git-svn-id: https://pytracer.googlecode.com/svn/trunk@57
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-12-24  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* NEWS, VERSION, __pkginfo__.py: Get ready for 0.2.3 release git-svn-id: https://pytracer.googlecode.com/svn/trunk@56
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-12-24  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* test/test-add-hook.py, test/test-basic.py, tracer/tracer.py: Bug
+	uncovered by Yaroslav the wise.  Warning incompatible change: option key 'front' (formerly
+	'to_front') of add_hook is now called 'position' and takes an
+	integer.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@55
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-10-19  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* README.txt: Grammar typo - thanks to Yaroslav Halchenko. Is he the
+	only one (myself included) who reads this? git-svn-id: https://pytracer.googlecode.com/svn/trunk@54
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-03-08  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* NEWS, __pkginfo__.py, setup.py: Administriva. Get ready for
+	release git-svn-id: https://pytracer.googlecode.com/svn/trunk@52
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-03-08  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* tracer/.cvsignore: Administrivia git-svn-id: https://pytracer.googlecode.com/svn/trunk@51
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-02-28  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* tracer/tracer.py: Leave a mark in the frame so clients like pydbg
+	can know to omit  listing this kind of frame git-svn-id: https://pytracer.googlecode.com/svn/trunk@50
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-02-17  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* tracer/tracer.py: Show functions in little demo code.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@49
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-01-17  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* tracer/tracer.py: Add a debug flag for showing all events that
+	come through git-svn-id: https://pytracer.googlecode.com/svn/trunk@48
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-01-14  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* __pkginfo__.py, tracer/COPYING, tracer/tracefilter.py,
+	tracer/tracer.py: Add GPL stuff git-svn-id: https://pytracer.googlecode.com/svn/trunk@47
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-01-14  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* COPYING, tracer/COPYING: Add GPL stuff git-svn-id: https://pytracer.googlecode.com/svn/trunk@46
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-01-11  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* tracer/tracer.py: Add EVENT2SHORT.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@45
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-01-11  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* __pkginfo__.py, setup.cfg, test/test-basic.py, tracer/tracer.py: 
+	trace.py: Add EVENT2SHORT. Others: administrivia git-svn-id: https://pytracer.googlecode.com/svn/trunk@44
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-01-01  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* tracer/tracefilter.py: Bug in picking out f_code git-svn-id: https://pytracer.googlecode.com/svn/trunk@43
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-01-01  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* test/Makefile, tracer/Makefile: Add Convenience Makefiles git-svn-id: https://pytracer.googlecode.com/svn/trunk@42
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2009-01-01  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* tracer/tracer.py: Use get to shorten code.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@41
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-31  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* __pkginfo__.py, tracer/tracer.py: Allow others to use
+	check_events. Bump revision number.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@40
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-28  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* test/test-basic.py: I figured out how to use AssertRaises git-svn-id: https://pytracer.googlecode.com/svn/trunk@39
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-24  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* __pkginfo__.py: Get ready for another release git-svn-id: https://pytracer.googlecode.com/svn/trunk@37
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-24  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* __pkginfo__.py, setup.py, tracer/tracer.py: zip installation is a
+	mess. Avoid it.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@36
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-22  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* test/test-remove.py: See above.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@35
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-22  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* test/test-remove.py, tracer/tracer.py: Removing a non-existent
+	hook should return none rather than raise an error.  Add a small
+	remove-hook unit test.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@34
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-20  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* tracer/tracer.py: Use option-set improvement to DRY code a little:
+	None == default options.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@33
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-20  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* test/test-basic.py, tracer/tracer.py: Improvement to option_set:
+	Allow an option set to None to mean the same as the default options.
+	Previously it caused an error.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@32
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-19  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* test/test-basic.py, tracer/tracer.py: Fix bug in handling
+	method-based trace function. Add a test this time! git-svn-id: https://pytracer.googlecode.com/svn/trunk@31
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-19  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* tracer/tracer.py: Allow method trace hooks as well as function
+	trace hooks.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@30
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-19  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* tracer/tracer.py: Save frame id's as ignore_frame objects rather
+	than the full frame object to make GC happier.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@29
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-19  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* test/test-basic.py, tracer/tracer.py: Change add-hook's
+	"ignore_me" to the more general "backlevel".  git-svn-id: https://pytracer.googlecode.com/svn/trunk@28
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-19  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* setup.py, test/test-basic.py, tracer/.gitignore, tracer/tracer.py: 
+	More interfaces made public. More work to back-patch caller frames.
+	Will probably simplify/generalize interface more as we use more.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@27
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-19  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* tracer/.gitignore: More interfaces public. Allow more back
+	tracking of frames. Probably interface will change a bit more based
+	on use.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@26
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-19  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* test/test-basic.py, tracer/tracer.py: Reinstate tracer test now
+	that we have more control over ignoring frames.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@25
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-19  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* src/__init__.py, src/tracefilter.py, src/tracer.py,
+	tracer/__init__.py, tracer/tracefilter.py, tracer/tracer.py: src ->
+	tracer rename git-svn-id: https://pytracer.googlecode.com/svn/trunk@24
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-19  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* src/__init__.py, src/tracefilter.py, src/tracer.py: git-svn-id:
+	https://pytracer.googlecode.com/svn/trunk@23
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-18  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* __pkginfo__.py, setup.cfg, setup.py, test/test-basic.py,
+	test/test-filter.py, tracer.py: Add filter package git-svn-id: https://pytracer.googlecode.com/svn/trunk@22
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-18  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* test/test-basic.py, tracer.py: Reduce some of the tracer
+	weirdness. Can now trace calling routine or not.  Traces less often
+	into the tracing routines.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@21
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-17  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* .gitignore, tracer.py: Set hook in threading as well.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@20
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-15  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* .gitignore, test/.gitignore: Administriva: Add some .gitignores.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@19
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-10  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* setup.py: Syntax error git-svn-id: https://pytracer.googlecode.com/svn/trunk@18
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-10  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* setup.cfg: Dist-related changes git-svn-id: https://pytracer.googlecode.com/svn/trunk@17
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-10  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* __pkginfo__.py, setup.cfg: Add download_url to release.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@15
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-12-01  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* setup.cfg, test/test-basic.py: Allow unit tests to have the
+	execute bit set on. We can run these standalone.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@13
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-11-30  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* .cvsignore, Makefile, __init__.py, __pkginfo__.py, setup.cfg,
+	setup.py, svn2cl_usermap: Fix up setup.py.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@12
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-11-27  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* Makefile, setup.cfg: Compatibility is a good thing for us
+	old-timers git-svn-id: https://pytracer.googlecode.com/svn/trunk@11
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-11-24  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* setup.py, test/test-basic.py: Small changes.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@10
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-11-23  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* test/test-basic.py: More robust path expansion.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@9
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-11-23  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* setup.py: Add missing module name.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@8
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-11-23  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* test/test-basic.py, tracer.py: Add message strings on exceptions
+	raised. Use superTuple instead of Bunch.  Other stylistic things.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@7
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-11-23  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* test/test-basic.py, tracer.py: Add filtering by event type. Clean
+	up code a little too.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@6
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-11-23  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* README.txt, dbgcore.py, setup.py, test/test-basic.py: Get unit
+	test run via setup.py dbgcore.py moved into debugger project.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@5
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-11-22  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* .cvsignore, setup.py, test/basic.py, test/test-basic.py: The most
+	rudimentary setuptools setup.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@4
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-11-22  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* test/basic.py, tracer.py: Start checking captured events. Align
+	names according to "best practices".  git-svn-id: https://pytracer.googlecode.com/svn/trunk@3
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-11-21  rocky.bernstein <rocky.bernstein@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* .cvsignore, dbgcore.py, test/.cvsignore, test/basic.py, tracer.py: 
+	Centralized Trace management around sys.settrace. We allow several
+	sets of trace events to get registered and unregistered and allow
+	tracing to be turned on and off temporarily without losing the trace
+	functions.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@2
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
+2008-11-21  (no author) <(no author)@6ebf6a92-b7d9-11dd-8622-756dacf128ff>
+
+	* Initial directory structure.  git-svn-id: https://pytracer.googlecode.com/svn/trunk@1
+	6ebf6a92-b7d9-11dd-8622-756dacf128ff
+
