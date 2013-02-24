@@ -145,37 +145,37 @@ DEFAULT_ADD_HOOK_OPTS = {
     }
 
 def add_hook(trace_fn, options=None):
-    """Add `trace_fn' to the list of callback functions that get run
+    """Add _trace_fn_ to the list of callback functions that get run
     when tracing is turned on. The number of hook functions
     registered is returned.
 
-    A check is made on `trace_fn' to make sure it is a function
-    which takes 3 parameters: a frame, an event, and an arg or which
-    sometimes arg is None.
+    A check is made on _trace_fn_ to make sure it is a function
+    which takes 3 parameters: a _frame_, an _event_, and an arg which
+    sometimes arg is _None_.
 
-    `options' is a hash having potential keys: 'position', 'start',
-    'event_set', and 'backlevel'.
+    _options_ is a dictionary having potential keys: _position_, _start_,
+    _event_set_, and _backlevel_.
 
     If the event_set option-key is included, it should be is an event
-    set that trace_fn will get run on. Use set() or frozenset() to
+    set that trace_fn will get run on. Use _set()_ or _frozenset()_ to
     create this set. ALL_EVENT_NAMES is a tuple contain a list of
     the event names. ALL_EVENTS is a frozenset of these.
 
-    'position' is the index of where the hook should be place in the
-    list, so 0 is first and -1 *after* is last item; the default is
-    the very back of the list (-1). -2 is *after* the next to last
+    _position_ is the index of where the hook should be place in the
+    list, so 0 is first and -1 _after_ is last item; the default is
+    the very back of the list (-1). -2 is _after_ the next to last
     item.
 
-    'start' is a boolean which indicates the hooks should be started
+    _start_ is a boolean which indicates the hooks should be started
     if they aren't already.
 
-    'backlevel' an integer indicates that the calling should continue
-    backwards in return call frames and is the number of levels to
-    skip ignore. 0 means that the caller of add_hook() is traced as
-    well as all new frames the caller subsequently calls. 1 means
-    that all the caller of add_hook() is ignored but prior parent
-    frames are traced, and None means that no previous parent frames
-    should be traced.
+    _backlevel_ is an integer indicates that the calling should
+    continue backwards in return call frames and is the number of
+    levels to skip ignore. 0 means that the caller of add_hook() is
+    traced as well as all new frames the caller subsequently calls. 1
+    means that all the caller of _add_hook()_ is ignored but prior
+    parent frames are traced, and None means that no previous parent
+    frames should be traced.
     """
 
     # Parameter checking:
@@ -233,7 +233,7 @@ def add_hook(trace_fn, options=None):
         HOOKS.append(entry)
     else:
         if position < -1:
-            # Recall we need -1 for *after* the end so -2 is normally what is
+            # Recall we need -1 for _after_ the end so -2 is normally what is
             # called -1.
             position += 1
             pass
@@ -244,7 +244,7 @@ def add_hook(trace_fn, options=None):
     return len(HOOKS)
 
 def clear_hooks():
-    ' clear all trace hooks '
+    'Clear all trace hooks.'
     global HOOKS
     HOOKS = []
     return
@@ -257,14 +257,14 @@ def clear_hooks_and_stop():
     return
 
 def size():
-    """Return the number of trace hooks installed, an integer."""
+    """Returns the number of trace hooks installed, an integer."""
     global HOOKS
     return len(HOOKS)
 
 def is_started():
-    """Return True if tracing has been started. Until we assume Python 2.6
+    """Returns _True_ if tracing has been started. Until we assume Python 2.6
     or better, keeping track is done by internal tracking. Thus calls to
-    sys.settrace outside of Tracer won't be detected :-(
+    sys.settrace outside of Tracer won't be detected.(
     """
     global STARTED_STATE
     return STARTED_STATE
@@ -292,9 +292,10 @@ DEFAULT_START_OPTS = {
     }
 
 def start(options = None):
-    """Start using all previously-registered trace hooks. If `trace_fn'
-    is not None, we'll search for that and add it, if it's not already
-    added."""
+    """Start using all previously-registered trace hooks. If
+    _options[trace_fn]_ is not None, we'll search for that and add it, if it's
+    not already added."""
+
     get_option = lambda key: option_set(options, key, DEFAULT_START_OPTS)
     trace_fn = get_option('trace_fn')
     if trace_fn is not None:

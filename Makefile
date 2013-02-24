@@ -5,6 +5,7 @@
 # remake --tasks to shows the targets and the comments
 
 PYTHON ?= python
+PYTHON3 ?= python3
 GIT2CL ?= git2cl
 
 PHONY=check clean dist distclean test
@@ -14,6 +15,7 @@ all: check
 #: Run all tests
 check: 
 	$(PYTHON) ./setup.py nosetests
+	$(PYTHON3) ./setup.py nosetests
 
 #: Clean up temporary files
 clean: 
