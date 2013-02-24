@@ -1,6 +1,7 @@
 /*.egg-info
 /*.pyc
 /*~
-__pycache__
+/ChangeLog
 /build
 /dist
+__pycache__
