@@ -15,7 +15,7 @@ all: check
 #: Run all tests
 check: 
 	$(PYTHON) ./setup.py nosetests
-	$(PYTHON3) ./setup.py nosetests
+	[[ $(PYTHON3) != $(PYTHON) ]] && $(PYTHON3) ./setup.py nosetests || true
 
 #: Clean up temporary files
 clean: 
