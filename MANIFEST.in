@@ -1,1 +1,7 @@
+include COPYING
+include Makefile
+include NEWS
 include VERSION.py
+include __pkginfo__.py
+include test Makefile
+

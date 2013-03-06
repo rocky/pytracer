@@ -8,7 +8,7 @@ PYTHON ?= python
 PYTHON3 ?= python3
 GIT2CL ?= git2cl
 
-PHONY=check clean dist distclean test
+PHONY=check clean dist distclean test rmChangeLog
 
 all: check
 
@@ -40,8 +40,11 @@ install:
 #: Same as 'check' target
 test: check
 
+rmChangeLog: 
+	rm ChangeLog || true
+
 #: Create a ChangeLog from git via git log and git2cl
-ChangeLog:
+ChangeLog: rmChangeLog
 	git log --pretty --numstat --summary | $(GIT2CL) >$@
 
 .PHONY: $(PHONY)
