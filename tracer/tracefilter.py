@@ -44,7 +44,7 @@ def to_f_code(f):
         if len(t) > 0: return t[0][1]
         return None
 
-class TraceFilter():
+class TraceFilter:
     """A class that can be used to test whether
     certain frames or functions should be skipped/included in tracing.
     """
