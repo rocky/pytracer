@@ -38,13 +38,15 @@ def fs2set(frames_or_fns):
 
 def to_f_code(f):
     if hasattr(f, 'func_code'):
+        return f.func_code
+    elif hasattr(f, '__code__'):
         return f.__code__
     else:
         t = inspect.getmembers(f, inspect.iscode)
         if len(t) > 0: return t[0][1]
         return None
 
-class TraceFilter():
+class TraceFilter:
     """A class that can be used to test whether
     certain frames or functions should be skipped/included in tracing.
     """
