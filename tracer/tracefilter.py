@@ -38,6 +38,8 @@ def fs2set(frames_or_fns):
 
 def to_f_code(f):
     if hasattr(f, 'func_code'):
+        return f.func_code
+    elif hasattr(f, '__code__'):
         return f.__code__
     else:
         t = inspect.getmembers(f, inspect.iscode)

@@ -184,13 +184,22 @@ def add_hook(trace_fn, options=None):
     elif inspect.isfunction(trace_fn):
         argcount = 3
     else:
-        raise TypeError((
-            "trace_fn should be something isfunction() or ismethod() blesses"))
+        raise TypeError(
+            "trace_fn should be something isfunction() or ismethod() blesses")
     try:
-        if argcount != trace_fn.__code__.co_argcount:
+        if hasattr(trace_fn, 'func_code'):
+            code = trace_fn.func_code
+        elif hasattr(trace_fn, '__code__'):
+            code = trace_fn.__code__
+        else:
             raise TypeError(
-                'trace fn should take exactly %d arguments (takes %d)' % (
-                        argcount, trace_fn.__code__.co_argcount,))
+                'trace fn %s should should have a func_code or __code__ attribute', repr(trace_fn))
+        pass
+
+        if argcount != code.co_argcount:
+            raise TypeError(
+                'trace fn %s should take exactly %d arguments (takes %d)' % (
+                    repr(trace_fn), argcount, trace_fn.__code__.co_argcount,))
     except:
         raise TypeError
 
