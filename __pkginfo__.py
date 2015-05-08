@@ -1,4 +1,4 @@
-# Copyright (C) 2008, 2009, 2010 Rocky Bernstein <rocky@gnu.org>
+# Copyright (C) 2008-2010, 2015 Rocky Bernstein <rocky@gnu.org>
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """pytracer packaging information"""
 
-copyright   = '''Copyright (C) 2008, 2009, 2010 Rocky Bernstein <rocky@gnu.org>.'''
+copyright   = '''Copyright (C) 2008-2010, 2015 Rocky Bernstein <rocky@gnu.org>.'''
 classifiers =  ['Development Status :: 4 - Beta',
                 'Environment :: Console',
                 'Intended Audience :: Developers',
@@ -43,9 +43,11 @@ web          = 'http://code.google.com/p/pytracer'
 
 package_dir  = {'': 'tracer'}
 
-zip_safe     = False # tracebacks in zip files are funky and not debuggable
+# tracebacks in zip files are funky and not debuggable
+zip_safe     = False
 
 import os
 def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
-long_description   = ( read("README.txt") + '\n\n' +  read("NEWS") )
+
+long_description   = ( read("README.rst") + '\n' )

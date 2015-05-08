@@ -5,9 +5,11 @@ distutils setup (setup.py) for pytracer.
 This gets a bit of package info from __pkginfo__.py file
 """
 # Get the required package information
-from __pkginfo__ import author, author_email, classifiers, \
-    license, modname, package_dir, \
-    short_desc, version, web, zip_safe
+from __pkginfo__ import \
+    author,           author_email,       classifiers,                    \
+    install_requires, license,            long_description,               \
+    modname,          pkdg_dir,           \
+    short_desc,       version,            web,              zip_safe
 
 from setuptools import setup
 
@@ -30,6 +32,7 @@ setup(
       py_modules         = ['tracer', 'tracefilter'],
       test_suite         = 'nose.collector',
       url                = web,
+      setup_requires     = ['nose>=1.0'],
       version            = version,
       zip_safe           = zip_safe
       )
