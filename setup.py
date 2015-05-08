@@ -7,15 +7,14 @@ This gets a bit of package info from __pkginfo__.py file
 # Get the required package information
 from __pkginfo__ import \
     author,           author_email,       classifiers,                    \
-    install_requires, license,            long_description,               \
-    modname,          pkdg_dir,           \
+    license,          long_description,   modname,          package_dir,  \
     short_desc,       version,            web,              zip_safe
 
 from setuptools import setup
 
 import os
 top_dir = os.path.dirname(__file__)
-README  = os.path.join(top_dir, 'README.txt')
+README  = os.path.join(top_dir, 'README.rst')
 
 # Description in package will come from the README file.
 long_description = open(README).read() + '\n\n'

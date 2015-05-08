@@ -2,12 +2,6 @@
 # -*- Python -*-
 "Unit test for Tracer's add-hook"
 import operator, os, sys, unittest
-
-top_builddir = os.path.join(os.path.dirname(__file__), '..', 'tracer')
-if top_builddir[-1] != os.path.sep:
-    top_builddir += os.path.sep
-sys.path.insert(0, top_builddir)
-
 import tracer, tracefilter
 
 trace_lines = []

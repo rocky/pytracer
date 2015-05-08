@@ -1,6 +1,6 @@
 /*.egg-info
-/*.pyc
-/*~
+*.pyc
+*~
 /.python-version
 /ChangeLog
 /build

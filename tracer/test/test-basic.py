@@ -2,13 +2,8 @@
 # -*- Python -*-
 "Unit test for Tracer"
 import operator, os, sys, unittest
-
-top_builddir = os.path.join(os.path.dirname(__file__), '..', 'tracer')
-if top_builddir[-1] != os.path.sep:
-    top_builddir += os.path.sep
-sys.path.insert(0, top_builddir)
-
-import tracer, tracefilter
+import tracer as tracer
+import tracefilter
 
 trace_lines = []
 ignore_filter = tracefilter.TraceFilter([tracer.stop])
@@ -16,7 +11,7 @@ ignore_filter = tracefilter.TraceFilter([tracer.stop])
 def my_trace_dispatch(frame, event, arg):
     """A pure-function trace hook"""
     global trace_lines
-    if ignore_filter.is_included(frame): 
+    if ignore_filter.is_included(frame):
         return None
     Entry    = tracer.superTuple('line_entry', 'frame', 'event', 'arg', 'filename',
                                  'lineno', 'name')
@@ -41,17 +36,17 @@ class TestTracer(unittest.TestCase):
 
     def test_event2short_sanity(self):
         t = sorted(tracer.EVENT2SHORT.keys())
-        self.assertEqual(tracer.ALL_EVENT_NAMES, tuple(t), 
+        self.assertEqual(tracer.ALL_EVENT_NAMES, tuple(t),
                          "EVENT2SHORT.keys() should match ALL_EVENT_NAMES")
         return
 
     def test_option_set(self):
-        self.assertTrue(tracer.option_set({'opt': True}, 'opt', 
+        self.assertTrue(tracer.option_set({'opt': True}, 'opt',
                                           {'opt': False}))
         self.assertTrue(tracer.option_set(None, 'opt', {'opt': True}))
-        self.assertFalse(tracer.option_set({'opt': True}, 'notthere', 
+        self.assertFalse(tracer.option_set({'opt': True}, 'notthere',
                                            {'opt': True, 'notthere': False}))
-        self.assertEqual(None, tracer.option_set({'opt': True}, 'notthere', 
+        self.assertEqual(None, tracer.option_set({'opt': True}, 'notthere',
                                                  {}))
         return
 
@@ -65,7 +60,7 @@ class TestTracer(unittest.TestCase):
 
         tracer.stop()
         self.assertEqual(False, tracer.is_started())
-        self.assertEqual(1, 
+        self.assertEqual(1,
                          tracer.add_hook(my_trace_dispatch,
                                          {'backlevel': 1}))
         self.assertEqual(0, len(trace_lines))
@@ -73,8 +68,8 @@ class TestTracer(unittest.TestCase):
         tracer.start()
         self.assertEqual(0, len(trace_lines))
         self.assertEqual(True, tracer.is_started())
-        self.assertEqual(0, 
-                         tracer.remove_hook(my_trace_dispatch, 
+        self.assertEqual(0,
+                         tracer.remove_hook(my_trace_dispatch,
                                             stop_if_empty=True))
         self.assertEqual(False, tracer.is_started())
         self.assertEqual(1, tracer.add_hook(my_trace_dispatch,
@@ -88,7 +83,7 @@ class TestTracer(unittest.TestCase):
         """Test various error conditions."""
         # 5 is not a function
         self.assertRaises(TypeError, tracer.add_hook, *(5,))
-            
+
         # test_errors has the wrong number of args
         self.assertRaises(TypeError, tracer.add_hook, *(self.test_errors,))
 
@@ -103,12 +98,12 @@ class TestTracer(unittest.TestCase):
     def test_trace(self):
         """Test that trace hook is triggering event callbacks without filtering."""
         tracer.clear_hooks_and_stop()
-        self.assertEqual(1, tracer.add_hook(my_trace_dispatch, 
+        self.assertEqual(1, tracer.add_hook(my_trace_dispatch,
                                             {'start': True,
                                              'backlevel': 1}))
-        def squares(): 
+        def squares():
             j = 1
-            for i in range(5): 
+            for i in range(5):
                 j += j + 2
                 pass
             return
@@ -116,13 +111,13 @@ class TestTracer(unittest.TestCase):
         tracer.stop()
         global trace_lines
         import pprint
-#         for entry in trace_lines: 
+#         for entry in trace_lines:
 #            print entry.event, entry.filename, entry.lineno, entry.name
         self.assertTrue(len(trace_lines) >= 5,
                         'Should have captured some trace output')
         for i, right in [(-1, ('return', 'squares',)),
                          (-2, ('line',   'squares',))]:
-            self.assertEqual(right, 
+            self.assertEqual(right,
                              (trace_lines[i].event, trace_lines[i].name,))
         return
 
@@ -131,7 +126,7 @@ class TestTracer(unittest.TestCase):
         global ignore_filter
         ignore_filter = tracefilter.TraceFilter()
         tracer.clear_hooks_and_stop()
-        self.assertEqual(1, tracer.add_hook(my_trace_dispatch, 
+        self.assertEqual(1, tracer.add_hook(my_trace_dispatch,
                                             {'start': True,
                                              'event_set': frozenset(('call',))}))
         def foo(): pass
@@ -139,14 +134,14 @@ class TestTracer(unittest.TestCase):
         tracer.stop()
         global trace_lines
         import pprint
-#         for entry in trace_lines: 
+#         for entry in trace_lines:
 #             print entry.event, entry.filename, entry.lineno, entry.name
         self.assertTrue(len(trace_lines) >= 2,
                         'Should have captured some trace output')
         for i, right in [(-1, ('call',   'stop',)),
                          (-2, ('call',   'foo', ))
                          ]:
-            self.assertEqual(right, 
+            self.assertEqual(right,
                              (trace_lines[i].event, trace_lines[i].name,))
         return
 
