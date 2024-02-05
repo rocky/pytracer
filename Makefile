@@ -1,6 +1,6 @@
 # Compatibility for us old-timers.
 
-# Note: This makefile include remake-style target comments. 
+# Note: This makefile include remake-style target comments.
 # These comments before the targets start with #:
 # remake --tasks to shows the targets and the comments
 
@@ -13,34 +13,33 @@ PHONY=check clean dist distclean test rmChangeLog
 all: check
 
 #: Run all tests
-check: 
-	$(PYTHON) ./setup.py nosetests
-	[[ $(PYTHON3) != $(PYTHON) ]] && $(PYTHON3) ./setup.py nosetests || true
+check:
+	$(PYTHON) -m pytest test
 
 #: Clean up temporary files
-clean: 
+clean:
 	$(PYTHON) ./setup.py $@
 
 #: Create source (tarball) and binary (egg) distribution
-dist: 
+dist:
 	$(PYTHON) ./setup.py sdist bdist
 
 # It is too much work to figure out how to add a new command to distutils
 # to do the following. I'm sure distutils will someday get there.
 DISTCLEAN_FILES = build dist *.egg-info *.pyc *.so py*.py
 
-#: Remove ALL derived files 
+#: Remove ALL derived files
 distclean: clean
 	-rm -fr $(DISTCLEAN_FILES) || true
 
 #: Install package locally
-install: 
+install:
 	$(PYTHON) ./setup.py install
 
 #: Same as 'check' target
 test: check
 
-rmChangeLog: 
+rmChangeLog:
 	rm ChangeLog || true
 
 #: Create a ChangeLog from git via git log and git2cl

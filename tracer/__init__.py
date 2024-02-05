@@ -1,3 +1,7 @@
-#
-# This file is necessary to make this directory a package.
-__all__ = ['tracer', 'tracefilter']
+"""
+Centralized Trace management of ``sys.settrace``.
+"""
+
+from tracer.tracer import clear_hooks, null_trace_hook, remove_hook
+
+__all__ = ["clear_hooks", "null_trace_hook", "remove_hook"]

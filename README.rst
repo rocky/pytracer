@@ -1,4 +1,4 @@
-Centralized Trace management using `sys.settrace`.
+Centralized Trace management using ``sys.settrace``.
 
 We allow several trace hooks to get registered and unregistered and
 allow tracing to be turned on and off temporarily without losing the
