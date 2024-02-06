@@ -1,4 +1,5 @@
-# Copyright (C) 2008-2010, 2015 Rocky Bernstein <rocky@gnu.org>
+# Copyright (C) 2008-2010, 2015, 2024
+# Rocky Bernstein <rocky@gnu.org>
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -13,6 +14,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """pytracer packaging information"""
+
+import os.path as osp
 
 copyright   = '''Copyright (C) 2008-2010, 2015 Rocky Bernstein <rocky@gnu.org>.'''
 classifiers =  ['Development Status :: 4 - Beta',
@@ -34,20 +37,28 @@ license      = 'GPL'
 modname      = 'tracer'
 
 short_desc   = 'Centralized sys.settrace management'
-import os.path
-# VERSION.py sets variable VERSION.
-exec(compile(open(os.path.join(os.path.dirname(__file__), 'VERSION.py')).read(), os.path.join(os.path.dirname(__file__), 'VERSION.py'), 'exec'))
+# __version__.py sets variable __version__.
 
-version      = VERSION
-web          = 'http://code.google.com/p/pytracer'
+def get_srcdir():
+    filename = osp.normcase(osp.dirname(osp.abspath(__file__)))
+    return osp.realpath(filename)
+
+
+def read(*rnames):
+    return open(osp.join(get_srcdir(), *rnames)).read()
+
+
+exec(read("tracer", "version.py"))
+
+version      = __version__
+web          = 'http://github.com/rocky/pytracer'
 
 package_dir  = {'': 'tracer'}
 
 # tracebacks in zip files are funky and not debuggable
 zip_safe     = False
 
-import os
 def read(*rnames):
-    return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
+    return open(osp.join(osp.dirname(__file__), *rnames)).read()
 
 long_description   = ( read("README.rst") + '\n' )
