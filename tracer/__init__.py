@@ -2,15 +2,42 @@
 Centralized Trace management of ``sys.settrace``.
 """
 
-from tracer.tracer import (ALL_EVENTS, EVENT2SHORT, clear_hooks,
-                           null_trace_hook, remove_hook)
+from tracer.tracer import (
+    ALL_EVENT_NAMES,
+    ALL_EVENTS,
+    DEFAULT_ADD_HOOK_OPTS,
+    EVENT2SHORT,
+    HOOKS,
+    add_hook,
+    clear_hooks,
+    clear_hooks_and_stop,
+    find_hook,
+    is_started,
+    null_trace_hook,
+    option_set,
+    remove_hook,
+    size,
+    start,
+    stop,
+)
 from tracer.version import __version__
 
 __all__ = [
+    "ALL_EVENT_NAMES",
     "ALL_EVENTS",
+    "DEFAULT_ADD_HOOK_OPTS",
     "EVENT2SHORT",
+    "HOOKS",
+    "__version__",
+    "add_hook",
     "clear_hooks",
+    "clear_hooks_and_stop",
+    "find_hook",
+    "is_started",
     "null_trace_hook",
+    "option_set",
     "remove_hook",
-    "__version__"
-    ]
+    "size",
+    "start",
+    "stop",
+]
