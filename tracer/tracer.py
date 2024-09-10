@@ -380,7 +380,7 @@ if __name__ == "__main__":
     def my_trace_dispatch(frame, event, arg):
         global trace_count, ignore_filter
         "A sample trace function"
-        if ignore_filter.is_included(frame):
+        if ignore_filter.is_excluded(frame):
             return None
         lineno = frame.f_lineno
         filename = frame.f_code.co_filename
