@@ -25,7 +25,7 @@ class Entry(NamedTuple):
 def my_trace_dispatch(frame, event, arg):
     """A pure-function trace hook"""
     global trace_lines
-    if ignore_filter.is_included(frame):
+    if ignore_filter.is_excluded(frame):
         return None
     filename = frame.f_code.co_filename
     lineno = frame.f_lineno

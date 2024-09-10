@@ -24,7 +24,7 @@ import inspect
 import sys
 import threading
 
-from enum import Enum
+# from enum import Enum
 from typing import Any, Callable, NamedTuple, Optional
 
 class TraceEntry(NamedTuple):

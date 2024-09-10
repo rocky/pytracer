@@ -14,39 +14,35 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Filter out trace events based on the event's frame or a function code."""
 
-from types import CodeType
-from typing import Any, Iterable, Optional
 import inspect
+import os
+import sys
+from types import CodeType, ModuleType
+from typing import Any, Iterable, Optional, Set
 
 
-def add_to_set(object: Any, code_set: set) -> bool:
-    """Add `frame_or_fn' to the list of functions to include"""
+def add_to_code_set(object: Any, code_set: Set[CodeType]) -> bool:
+    """Add `object` to the list of functions to include.
+    Returns True if a code object was added."""
     try:
         code = get_code_object(object)
-        code_set.add(code)
-        return True
+        if code is not None:
+            code_set.add(code)
+            return True
     except Exception:
-        return False
-
-
-def objects2set(objects: Iterable) -> set:
-    """Given a list of frame or function objects, turn it into a set which
-    can be used in an include set.
-    """
-    code_set = set()
-    for object in objects:
-        add_to_set(object, code_set)
         pass
-    return code_set
+    return False
 
 
 def get_code_object(object: Any) -> Optional[CodeType]:
     """
-      Try to find a Python code object in ``object`` and if we
-      find it, return the code object. If we can't find, return
-      None.
+    Try to find a Python code object in ``object`` and if we
+    find it, return the code object. If we can't find, return
+    None.
     """
     code = None
+
+    # The code to pick out a code object comes from code in dis.dis
     if inspect.ismethod(object):
         object = object.__func__
 
@@ -63,56 +59,104 @@ def get_code_object(object: Any) -> Optional[CodeType]:
     return code if isinstance(code, CodeType) else None
 
 
+def get_module_object(object: Any) -> Optional[ModuleType]:
+    """Given a module name, frame, or code object, return the
+    module that his object belongs to, or None if we
+    can't find the module
+    """
+    if isinstance(object, ModuleType):
+        return object
+
+    module_path = None
+    module_name = None
+
+    if isinstance(object, CodeType):
+        module_path = object.co_filename
+    elif hasattr(object, "__module__"):
+        module_name = object.__module__
+
+    if isinstance(object, str):
+        if os.path.exists(object):
+            module_path = object
+        else:
+            # Assume a module name
+            module_name = object
+
+    if module_path is not None:
+        module_name = inspect.getmodulename(module_path)
+
+    return sys.modules.get(module_name) if module_name is not None else None
+
+
 class TraceFilter:
     """A class that can be used to test whether
     certain frames, functions, classes, or modules should be skipped/included in tracing.
     """
 
-    def __init__(self, include_items=[], include_modules=set()):
-        self.include_f_codes = objects2set(include_items)
-        self.exclude_modules = include_modules
+    def __init__(self, exclude_items: Iterable = list()):
+        self.clear()
+        for item in exclude_items:
+            self.add(item)
         return
 
-    def is_included(self, frame_or_fn_or_module) -> bool:
-        """Return True if `frame_or_fn' is in the list of functions to include"""
+    def is_excluded(self, object) -> bool:
+        """Return True if `object', a frame or function, is in the
+        list of functions to exclude"""
 
-        try:
-            return get_code_object(frame_or_fn_or_module) in self.include_f_codes
-        except Exception:
+        if isinstance(object, ModuleType):
+            return object in self.excluded_modules
+        code_object = get_code_object(object)
+        if code_object is None:
             return False
-
-    def clear_include(self):
-        self.include_f_codes = set()
-        return
-
-    def add_include(self, frame_or_fn):
-        """Remove `frame_or_fn' from the list of functions to include"""
-        try:
-            return add_to_set(frame_or_fn, self.include_f_codes)
-        except Exception:
-            return False
-
-    def remove_include(self, frame_or_fn_or_module) -> bool:
-        """Remove `frame_or_fn' from the list of functions to include"""
-        try:
-            self.include_f_codes.remove(get_code_object(frame_or_fn_or_module))
+        if code_object in self.excluded_code_objects:
             return True
-        except Exception:
+
+        module_object = get_module_object(code_object)
+        if module_object is None:
             return False
+
+        return module_object in self.excluded_modules
+
+    def clear(self):
+        self.excluded_code_objects: Set[CodeType] = set()
+        self.excluded_modules: Set[ModuleType] = set()
+        return
+
+    def add(self, object: Any) -> bool:
+        """Remove `frame_or_fn' from the list of functions to include"""
+        if isinstance(object, ModuleType):
+            self.excluded_modules.add(object)
+            return True
+        return add_to_code_set(object, self.excluded_code_objects)
+
+    def remove(self, object: Any) -> bool:
+        """Remove `object' from the list of functions to include.
+        Return True if an object was removed or False otherwise.
+        """
+        if isinstance(object, ModuleType):
+            self.excluded_modules.remove(object)
+            return True
+        code_object = get_code_object(object)
+        if code_object is None or code_object not in self.excluded_code_objects:
+            return False
+        self.excluded_code_objects.remove(code_object)
+        return True
 
 
 # Demo it
 if __name__ == "__main__":
-    filter = TraceFilter([add_to_set])
+    filter = TraceFilter([add_to_code_set])
     curframe = inspect.currentframe()
     f_code = get_code_object(curframe)
     print("Created filter for 'add_to_set'")
-    print(filter.include_f_codes)
-    print("filter includes 'add_to_set'?: %s" % filter.is_included(add_to_set))
-    print("Current frame includes 'add_to_set'?? %s" % filter.is_included(curframe))
-    print("filter includes get_code_object?: %s" % filter.is_included(get_code_object))
-    print("Removing filter for 'add_to_set'.")
-    filter.remove_include(add_to_set)
-    print("filter includes 'add_to_set'?: %s" % filter.is_included(add_to_set))
-    filter.clear_include()
+    print(filter.excluded_code_objects)
+    print(f"filter excludes add_to_set(): {filter.is_excluded(add_to_code_set)}")
+    print(f"Current frame now excludes add_to_set(): {filter.is_excluded(curframe)}")
+    print(f"filter excludes get_code_object?: {filter.is_excluded(get_code_object)}")
+    print("Removing filter for add_to_set()")
+    filter.remove(add_to_code_set)
+    print(f"filter excludes now add_to_set(): {filter.is_excluded(add_to_code_set)}")
+    filter.clear()
+    assert len(filter.excluded_modules) == 0
+    print(get_module_object(add_to_code_set))
     pass
