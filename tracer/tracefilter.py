@@ -15,6 +15,8 @@
 """Filter out trace events based on the event's frame or a function code."""
 
 import inspect
+import os
+import sys
 from types import CodeType, ModuleType
 from typing import Any, Iterable, Optional, Set
 
@@ -57,12 +59,41 @@ def get_code_object(object: Any) -> Optional[CodeType]:
     return code if isinstance(code, CodeType) else None
 
 
+def get_module_object(object: Any) -> Optional[ModuleType]:
+    """Given a module name, frame, or code object, return the
+    module that his object belongs to, or None if we
+    can't find the module
+    """
+    if isinstance(object, ModuleType):
+        return object
+
+    module_path = None
+    module_name = None
+
+    if isinstance(object, CodeType):
+        module_path = object.co_filename
+    elif hasattr(object, "__module__"):
+        module_name = object.__module__
+
+    if isinstance(object, str):
+        if os.path.exists(object):
+            module_path = object
+        else:
+            # Assume a module name
+            module_name = object
+
+    if module_path is not None:
+        module_name = inspect.getmodulename(module_path)
+
+    return sys.modules.get(module_name) if module_name is not None else None
+
+
 class TraceFilter:
     """A class that can be used to test whether
     certain frames, functions, classes, or modules should be skipped/included in tracing.
     """
 
-    def __init__(self, exclude_items: Iterable=list()):
+    def __init__(self, exclude_items: Iterable = list()):
         self.clear()
         for item in exclude_items:
             self.add(item)
@@ -72,12 +103,19 @@ class TraceFilter:
         """Return True if `object', a frame or function, is in the
         list of functions to exclude"""
 
-        if object is ModuleType:
+        if isinstance(object, ModuleType):
             return object in self.excluded_modules
         code_object = get_code_object(object)
         if code_object is None:
             return False
-        return code_object in self.excluded_code_objects
+        if code_object in self.excluded_code_objects:
+            return True
+
+        module_object = get_module_object(code_object)
+        if module_object is None:
+            return False
+
+        return module_object in self.excluded_modules
 
     def clear(self):
         self.excluded_code_objects: Set[CodeType] = set()
@@ -86,7 +124,7 @@ class TraceFilter:
 
     def add(self, object: Any) -> bool:
         """Remove `frame_or_fn' from the list of functions to include"""
-        if object is ModuleType:
+        if isinstance(object, ModuleType):
             self.excluded_modules.add(object)
             return True
         return add_to_code_set(object, self.excluded_code_objects)
@@ -95,7 +133,7 @@ class TraceFilter:
         """Remove `object' from the list of functions to include.
         Return True if an object was removed or False otherwise.
         """
-        if object is ModuleType:
+        if isinstance(object, ModuleType):
             self.excluded_modules.remove(object)
             return True
         code_object = get_code_object(object)
@@ -119,4 +157,6 @@ if __name__ == "__main__":
     filter.remove(add_to_code_set)
     print(f"filter excludes now add_to_set(): {filter.is_excluded(add_to_code_set)}")
     filter.clear()
+    assert len(filter.excluded_modules) == 0
+    print(get_module_object(add_to_code_set))
     pass
