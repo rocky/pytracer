@@ -27,6 +27,7 @@ import threading
 from enum import Enum
 from typing import Any, Callable, NamedTuple, Optional
 
+
 class TraceEntry(NamedTuple):
     trace_func: Callable
     event_set: frozenset
@@ -107,6 +108,7 @@ def _tracer_func(frame, event, arg):
     global TRACE_SUSPEND, HOOKS, debug
     if debug:
         print(f"{event} -- {frame.f_code.co_filename}:{frame.f_lineno}")
+
     if TRACE_SUSPEND:
         return _tracer_func
 
@@ -135,7 +137,6 @@ def _tracer_func(frame, event, arg):
                 pass
             pass
         pass
-    # print "event_seen %s, keep_trace %s" % (event_triggered, keep_trace,)
 
     # From sys.settrace info: The local trace function
     # should return a reference to itself (or to another function
