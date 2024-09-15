@@ -77,13 +77,16 @@ def get_module_object(object: Any) -> Optional[ModuleType]:
 
     if isinstance(module_path, str):
         if os.path.exists(module_path):
-            xx = [
+            # from sys.modules, pick out those modules whose filename is "module_path".
+            modules = [
                 module
                 for module in sys.modules.values()
                 if hasattr(module, "__file__") and module.__file__ == module_path
             ]
-            if len(xx):
-                return xx[0]
+            if len(modules):
+                # There is at least one matching module. (They all
+                # should be the same.)
+                return modules[0]
 
     return sys.modules.get(module_name) if module_name is not None else None
 
