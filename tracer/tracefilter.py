@@ -46,7 +46,7 @@ def get_code_object(object: Any) -> Optional[CodeType]:
     if inspect.ismethod(object):
         object = object.__func__
 
-    for attr in ("__code__", "gi_code", "ag_code", "cr_code"):
+    for attr in ("f_code", "__code__", "gi_code", "ag_code", "cr_code"):
         if hasattr(object, attr):
             code = getattr(object, attr)
             break
@@ -62,7 +62,7 @@ def get_code_object(object: Any) -> Optional[CodeType]:
 def get_module_object(object: Any) -> Optional[ModuleType]:
     """Given a module name, frame, or code object, return the
     module that his object belongs to, or None if we
-    can't find the module
+    can't find the module.
     """
     if isinstance(object, ModuleType):
         return object
@@ -75,15 +75,19 @@ def get_module_object(object: Any) -> Optional[ModuleType]:
     elif hasattr(object, "__module__"):
         module_name = object.__module__
 
-    if isinstance(object, str):
-        if os.path.exists(object):
-            module_path = object
-        else:
-            # Assume a module name
-            module_name = object
-
-    if module_path is not None:
-        module_name = inspect.getmodulename(module_path)
+    if isinstance(module_path, str):
+        if os.path.exists(module_path):
+            # from sys.modules, pick out those modules whose filename is "module_path".
+            modules = [
+                module
+                for module in sys.modules.values()
+                if hasattr(module, "__file__") and module.__file__ == module_path
+            ]
+            if len(modules):
+                # There is at least one matching module. (They all
+                # should be the same.)
+                return modules[0]
+>>>>>>> master
 
     return sys.modules.get(module_name) if module_name is not None else None
 
@@ -127,6 +131,13 @@ class TraceFilter:
         if isinstance(object, ModuleType):
             self.excluded_modules.add(object)
             return True
+        if inspect.isclass(object):
+            module_object = get_module_object(object)
+            if isinstance(module_object, ModuleType):
+                self.excluded_modules.add(module_object)
+                return True
+            else:
+                return False
         return add_to_code_set(object, self.excluded_code_objects)
 
     def remove(self, object: Any) -> bool:
