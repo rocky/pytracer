@@ -127,6 +127,13 @@ class TraceFilter:
         if isinstance(object, ModuleType):
             self.excluded_modules.add(object)
             return True
+        if inspect.isclass(object):
+            module_object = get_module_object(object)
+            if isinstance(module_object, ModuleType):
+                self.excluded_modules.add(module_object)
+                return True
+            else:
+                return False
         return add_to_code_set(object, self.excluded_code_objects)
 
     def remove(self, object: Any) -> bool:

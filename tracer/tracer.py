@@ -254,7 +254,7 @@ def add_hook(trace_func, options=None):
     # If the global tracer hook has been registered, the below will
     # trigger the hook to get called after the assignment.
     # That's why we set the hook for this frame to ignore tracing.
-    entry = TraceEntry(trace_func, event_set, ignore_frame)
+    entry = TraceEntry(trace_func, event_set, id(ignore_frame))
 
     # based on position, figure out where to put the hook.
     position = get_option(options, "position")
