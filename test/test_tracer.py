@@ -1,6 +1,6 @@
 """Unit tests for Tracer.trace"""
 
-from typing import Any, NamedTuple
+from collections import namedtuple
 
 import pytest
 import tracer
@@ -12,14 +12,7 @@ import tracer.tracefilter as tracefilter
 trace_lines = []
 ignore_filter = tracefilter.TraceFilter([tracer.stop])
 
-
-class Entry(NamedTuple):
-    frame: Any
-    event: str
-    arg: Any
-    filename: str
-    lineno: int
-    name: str
+Entry = namedtuple("Entry", "frame event arg filename lineno name")
 
 
 def my_trace_dispatch(frame, event, arg):

@@ -23,16 +23,9 @@ functions.
 import inspect
 import sys
 import threading
+from collections import namedtuple
 
-# from enum import Enum
-from typing import Any, Callable, NamedTuple, Optional
-
-
-class TraceEntry(NamedTuple):
-    trace_func: Callable
-    event_set: frozenset
-    ignore_frameid: int
-
+TraceEntry = namedtuple("TraceEntry", "trace_func event_set ignore_frameid")
 
 HOOKS = []  # List of Bunch(trace_func, event_set)
 # We run trace_func if the event is in event_set.
@@ -67,7 +60,7 @@ TRACE_SUSPEND = False
 debug = False  # Setting true
 
 
-def null_trace_hook(frame, event: str, arg: Any):
+def null_trace_hook(frame, event: str, arg):
     """A trace hook that doesn't do anything. Can use this to "turn off"
     tracing by setting frame.f_trace. Setting sys.settrace(None) sometimes
     doesn't work...
@@ -82,7 +75,7 @@ def check_event_set(event_set):
     return
 
 
-def find_hook(trace_func) -> Optional[int]:
+def find_hook(trace_func):
     """Find `trace_func` in `hooks`, and return the index of it, or
     None if it is not found."""
     try:
@@ -107,7 +100,7 @@ def _tracer_func(frame, event, arg):
 
     global TRACE_SUSPEND, HOOKS, debug
     if debug:
-        print(f"{event} -- {frame.f_code.co_filename}:{frame.f_lineno}")
+        print("%s -- %s:%s" % (event, frame.f_code.co_filename, frame.f_lineno))
 
     if TRACE_SUSPEND:
         return _tracer_func
@@ -153,7 +146,7 @@ DEFAULT_ADD_HOOK_OPTS = {
 }
 
 
-def get_option(options: dict, key: str) -> Any:
+def get_option(options: dict, key: str):
     return options.get(key, DEFAULT_ADD_HOOK_OPTS.get(key))
 
 
@@ -210,7 +203,8 @@ def add_hook(trace_func, options=None):
             code = trace_func.__code__
         else:
             raise TypeError(
-                f"trace {repr(trace_func)} should should have a func_code or __code__ attribute"
+                "trace %s should should have a func_code or __code__ attribute"
+                % repr(trace_func)
             )
         pass
 
@@ -237,7 +231,7 @@ def add_hook(trace_func, options=None):
     backlevel = get_option(options, "backlevel")
     if backlevel is not None:
         if not isinstance(backlevel, int):
-            raise TypeError(f"backlevel should be an integer type, is {backlevel}")
+            raise TypeError("backlevel should be an integer type, is %s" % backlevel)
         frame = ignore_frame
         while frame and backlevel >= 0:
             backlevel -= 1
@@ -387,9 +381,9 @@ if __name__ == "__main__":
         filename = frame.f_code.co_filename
         s = "%s - %s:%d" % (event, filename, lineno)
         if "call" == event:
-            s += f", {frame.f_code.co_name}()"
+            s += ", %s()" % frame.f_code.co_name
         if arg:
-            print(f"{s} arg {arg}")
+            print("{s} arg %s" % arg)
         else:
             print(s)
             pass
@@ -406,11 +400,10 @@ if __name__ == "__main__":
     def foo():
         print("foo")
 
-    print(f"** Tracing started before start(): {is_started()}")
-
+    print("** Tracing started before start(): %s" % is_started())
     start()  # tracer.start() outside of this file
+    print("** Tracing started after start(): %s" % is_started())
 
-    print(f"** Tracing started after start(): {is_started()}")
     add_hook(my_trace_dispatch)  # tracer.add_hook(...) outside
     eval("1+2")
     stop()
@@ -422,7 +415,7 @@ if __name__ == "__main__":
         print(i)
     trace_count = 25
     remove_hook(my_trace_dispatch, stop_if_empty=True)
-    print(f"** Tracing started: {is_started()}")
+    print("** Tracing started: %s" % is_started())
 
     print("** Tracing only 'call' now...")
     add_hook(my_trace_dispatch, {"start": True, "event_set": frozenset(("call",))})

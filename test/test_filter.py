@@ -5,6 +5,7 @@ from tracer.tracefilter import TraceFilter, add_to_code_set
 
 trace_lines = []
 
+
 def test_basic():
     filter = TraceFilter([test_basic])
     assert len(filter.excluded_modules) == 0
@@ -13,7 +14,9 @@ def test_basic():
     assert not filter.is_excluded(trace_lines), "Check excluding object of wrong type"
     assert not filter.is_excluded(5), "Check excluding another object of wrong type"
     current_frame = inspect.currentframe()
-    assert filter.is_excluded(current_frame), "Check that we can find a filter using a frame"
+    assert filter.is_excluded(
+        current_frame
+    ), "Check that we can find a filter using a frame"
 
     assert filter.add(inspect)
     assert len(filter.excluded_modules) == 1
@@ -32,7 +35,9 @@ def test_basic():
     assert filter.remove(test_basic), "Removing a code object that is in set"
     assert not filter.remove(test_basic), "Removing a code object is no longer in set"
     assert not filter.remove(add_to_code_set)
-    assert not filter.is_excluded(add_to_code_set), "Check filter is removed properly again"
+    assert not filter.is_excluded(
+        add_to_code_set
+    ), "Check filter is removed properly again"
     filter.clear()
     assert len(filter.excluded_modules) == 0
     assert len(filter.excluded_code_objects) == 0

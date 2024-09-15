@@ -18,10 +18,9 @@ import inspect
 import os
 import sys
 from types import CodeType, ModuleType
-from typing import Any, Iterable, Optional, Set
 
 
-def add_to_code_set(object: Any, code_set: Set[CodeType]) -> bool:
+def add_to_code_set(object, code_set: set) -> bool:
     """Add `object` to the list of functions to include.
     Returns True if a code object was added."""
     try:
@@ -34,7 +33,7 @@ def add_to_code_set(object: Any, code_set: Set[CodeType]) -> bool:
     return False
 
 
-def get_code_object(object: Any) -> Optional[CodeType]:
+def get_code_object(object):
     """
     Try to find a Python code object in ``object`` and if we
     find it, return the code object. If we can't find, return
@@ -59,7 +58,7 @@ def get_code_object(object: Any) -> Optional[CodeType]:
     return code if isinstance(code, CodeType) else None
 
 
-def get_module_object(object: Any) -> Optional[ModuleType]:
+def get_module_object(object):
     """Given a module name, frame, or code object, return the
     module that his object belongs to, or None if we
     can't find the module.
@@ -87,7 +86,6 @@ def get_module_object(object: Any) -> Optional[ModuleType]:
                 # There is at least one matching module. (They all
                 # should be the same.)
                 return modules[0]
->>>>>>> master
 
     return sys.modules.get(module_name) if module_name is not None else None
 
@@ -97,7 +95,7 @@ class TraceFilter:
     certain frames, functions, classes, or modules should be skipped/included in tracing.
     """
 
-    def __init__(self, exclude_items: Iterable = list()):
+    def __init__(self, exclude_items=list()):
         self.clear()
         for item in exclude_items:
             self.add(item)
@@ -122,11 +120,11 @@ class TraceFilter:
         return module_object in self.excluded_modules
 
     def clear(self):
-        self.excluded_code_objects: Set[CodeType] = set()
-        self.excluded_modules: Set[ModuleType] = set()
+        self.excluded_code_objects = set()
+        self.excluded_modules = set()
         return
 
-    def add(self, object: Any) -> bool:
+    def add(self, object) -> bool:
         """Remove `frame_or_fn' from the list of functions to include"""
         if isinstance(object, ModuleType):
             self.excluded_modules.add(object)
@@ -140,7 +138,7 @@ class TraceFilter:
                 return False
         return add_to_code_set(object, self.excluded_code_objects)
 
-    def remove(self, object: Any) -> bool:
+    def remove(self, object) -> bool:
         """Remove `object' from the list of functions to include.
         Return True if an object was removed or False otherwise.
         """
@@ -161,12 +159,12 @@ if __name__ == "__main__":
     f_code = get_code_object(curframe)
     print("Created filter for 'add_to_set'")
     print(filter.excluded_code_objects)
-    print(f"filter excludes add_to_set(): {filter.is_excluded(add_to_code_set)}")
-    print(f"Current frame now excludes add_to_set(): {filter.is_excluded(curframe)}")
-    print(f"filter excludes get_code_object?: {filter.is_excluded(get_code_object)}")
+    print("filter excludes add_to_set(): %s" % filter.is_excluded(add_to_code_set))
+    print("Current frame now excludes add_to_set(): %s" % filter.is_excluded(curframe))
+    print("filter excludes get_code_object?: %s" % filter.is_excluded(get_code_object))
     print("Removing filter for add_to_set()")
     filter.remove(add_to_code_set)
-    print(f"filter excludes now add_to_set(): {filter.is_excluded(add_to_code_set)}")
+    print("filter excludes now add_to_set(): %s" % filter.is_excluded(add_to_code_set))
     filter.clear()
     assert len(filter.excluded_modules) == 0
     print(get_module_object(add_to_code_set))
