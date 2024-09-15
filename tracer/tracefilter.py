@@ -46,7 +46,7 @@ def get_code_object(object: Any) -> Optional[CodeType]:
     if inspect.ismethod(object):
         object = object.__func__
 
-    for attr in ("__code__", "gi_code", "ag_code", "cr_code"):
+    for attr in ("f_code", "__code__", "gi_code", "ag_code", "cr_code"):
         if hasattr(object, attr):
             code = getattr(object, attr)
             break
@@ -62,7 +62,7 @@ def get_code_object(object: Any) -> Optional[CodeType]:
 def get_module_object(object: Any) -> Optional[ModuleType]:
     """Given a module name, frame, or code object, return the
     module that his object belongs to, or None if we
-    can't find the module
+    can't find the module.
     """
     if isinstance(object, ModuleType):
         return object
@@ -75,15 +75,15 @@ def get_module_object(object: Any) -> Optional[ModuleType]:
     elif hasattr(object, "__module__"):
         module_name = object.__module__
 
-    if isinstance(object, str):
-        if os.path.exists(object):
-            module_path = object
-        else:
-            # Assume a module name
-            module_name = object
-
-    if module_path is not None:
-        module_name = inspect.getmodulename(module_path)
+    if isinstance(module_path, str):
+        if os.path.exists(module_path):
+            xx = [
+                module
+                for module in sys.modules.values()
+                if hasattr(module, "__file__") and module.__file__ == module_path
+            ]
+            if len(xx):
+                return xx[0]
 
     return sys.modules.get(module_name) if module_name is not None else None
 
