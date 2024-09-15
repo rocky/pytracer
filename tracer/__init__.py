@@ -2,6 +2,11 @@
 Centralized Trace management of ``sys.settrace``.
 """
 
+from tracer.tracefilter import (
+    get_code_object,
+    get_module_object,
+)
+
 from tracer.tracer import (
     ALL_EVENT_NAMES,
     ALL_EVENTS,
@@ -33,6 +38,8 @@ __all__ = [
     "clear_hooks",
     "clear_hooks_and_stop",
     "find_hook",
+    "get_code_object",
+    "get_module_object",
     "is_started",
     "null_trace_hook",
     "option_set",
