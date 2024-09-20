@@ -87,7 +87,6 @@ def get_module_object(object: Any) -> Optional[ModuleType]:
                 # There is at least one matching module. (They all
                 # should be the same.)
                 return modules[0]
->>>>>>> master
 
     return sys.modules.get(module_name) if module_name is not None else None
 

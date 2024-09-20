@@ -1,6 +1,7 @@
 *.pyc
 *~
 /*.egg-info
+/.cache
 /.eggs
 /.python-version
 /ChangeLog
