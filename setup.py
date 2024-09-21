@@ -29,9 +29,7 @@ setup(
       name               = modname,
       # package_dir        = package_dir,
       py_modules         = ['tracer', 'tracer.tracefilter'],
-      test_suite         = 'nose.collector',
       url                = web,
-      setup_requires     = ['nose>=1.0'],
       version            = version,
       zip_safe           = zip_safe
       )
