@@ -1,10 +1,10 @@
 #!/bin/bash
-PYTHON_VERSION=3.2.6
+PYTHON_VERSION=3.3
 
 # FIXME put some of the below in a common routine
 function checkout_version {
     local repo=$1
-    version=${2:-python-3.0-to-3.2}
+    version=${2:-python-3.3-to-3.5}
     echo Checking out $version on $repo ...
     (cd ../$repo && git checkout $version && pyenv local $PYTHON_VERSION) && \
 	git pull
@@ -12,7 +12,7 @@ function checkout_version {
 }
 
 export PATH=$HOME/.pyenv/bin/pyenv:$PATH
-owd=$(pwd)
+setup_pytracer_33_owd=$(pwd)
 bs=${BASH_SOURCE[0]}
 if [[ $0 == $bs ]] ; then
     echo "This script should be *sourced* rather than run directly through bash"
@@ -21,5 +21,5 @@ fi
 
 rm -v */.python-version || true
 
-git checkout python-3.2-to-3.5 && pyenv local $PYTHON_VERSION && git pull
-cd $owd
+git checkout python-3.3-to-3.5 && pyenv local $PYTHON_VERSION && git pull
+cd $setup_pytracer_33_owd
