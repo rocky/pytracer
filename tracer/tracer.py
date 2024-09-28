@@ -111,14 +111,17 @@ def _tracer_func(frame, event, arg):
     # call from pytracer.
     # HACK ALERT: "inspect" can get deleted exit cleanup!
     if inspect:
-        try:
-            tracer_func_frame = inspect.currentframe()  # NOQA
-        except Exception:
-            tracer_func_frame = None  # NOQA
 
         # Go over all registered hooks
         for i in range(len(HOOKS)):
-            hook = HOOKS[i]
+
+            # This is weird:
+            #   HOOK[i] can get deleted
+            try:
+                hook = HOOKS[i]
+            except IndexError:
+                continue
+
             if hook.ignore_frameid == id(frame):
                 continue
             if hook.event_set is None or event in hook.event_set:
