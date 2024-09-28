@@ -23,7 +23,7 @@ functions.
 import inspect
 import sys
 import threading
-from collections import namedtuple
+from namedtuple24 import namedtuple
 
 TraceEntry = namedtuple("TraceEntry", "trace_func event_set ignore_frameid")
 
@@ -60,7 +60,7 @@ TRACE_SUSPEND = False
 debug = False  # Setting true
 
 
-def null_trace_hook(frame, event: str, arg):
+def null_trace_hook(frame, event, arg):
     """A trace hook that doesn't do anything. Can use this to "turn off"
     tracing by setting frame.f_trace. Setting sys.settrace(None) sometimes
     doesn't work...
@@ -149,7 +149,7 @@ DEFAULT_ADD_HOOK_OPTS = {
 }
 
 
-def get_option(options: dict, key: str):
+def get_option(options, key):
     return options.get(key, DEFAULT_ADD_HOOK_OPTS.get(key))
 
 
@@ -424,4 +424,4 @@ if __name__ == "__main__":
     add_hook(my_trace_dispatch, {"start": True, "event_set": frozenset(("call",))})
     foo()
     stop()
-    exit(0)
+    # exit(0)

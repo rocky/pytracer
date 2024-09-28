@@ -1,12 +1,26 @@
-"""Unit test for tracer.remove_hook"""
+#!/usr/bin/env python
+# -*- Python -*-
+"Unit test for Tracer"
+import operator, os, sys, unittest
 
-from tracer.tracer import clear_hooks, null_trace_hook, remove_hook
+top_builddir = os.path.join(os.path.dirname(__file__), '..')
+if top_builddir[-1] != os.path.sep:
+    top_builddir += os.path.sep
+sys.path.insert(0, top_builddir)
 
+import tracer, tracefilter
 
-def test_remove():
-    """
-    Test class for test for tracer.remove_hook
-    """
-    assert remove_hook(null_trace_hook) is None
-    clear_hooks()
-    assert remove_hook(null_trace_hook) is None
+trace_lines = []
+print tracer.__dict__
+# ignore_filter = tracefilter.TraceFilter([tracer.stop])
+
+class TestRemove(unittest.TestCase):
+
+    def test_remove(self):
+        self.assertEquals(None, tracer.remove_hook(tracer.null_trace_hook))
+        tracer.clear_hooks()
+        self.assertEquals(None, tracer.remove_hook(tracer.null_trace_hook))
+        return
+
+if __name__ == '__main__':
+    unittest.main()

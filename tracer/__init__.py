@@ -2,12 +2,14 @@
 Centralized Trace management of ``sys.settrace``.
 """
 
-from tracer.tracefilter import (
+from xdis.namedtuple24 import namedtuple
+
+from tracefilter import (
     get_code_object,
     get_module_object,
 )
 
-from tracer.tracer import (
+from tracer import (
     ALL_EVENT_NAMES,
     ALL_EVENTS,
     DEFAULT_ADD_HOOK_OPTS,
@@ -25,7 +27,7 @@ from tracer.tracer import (
     start,
     stop,
 )
-from tracer.version import __version__
+from version import __version__
 
 __all__ = [
     "ALL_EVENT_NAMES",
@@ -41,6 +43,7 @@ __all__ = [
     "get_code_object",
     "get_module_object",
     "is_started",
+    "namedtuple",
     "null_trace_hook",
     "option_set",
     "remove_hook",

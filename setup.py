@@ -28,7 +28,7 @@ setup(
       long_description   = long_description,
       name               = modname,
       # package_dir        = package_dir,
-      py_modules         = ['tracer', 'tracer.tracefilter'],
+      py_modules         = ["tracer", "tracer.tracefilter", "tracer.namedtuple24"],
       url                = web,
       version            = version,
       zip_safe           = zip_safe

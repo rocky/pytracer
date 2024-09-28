@@ -20,7 +20,7 @@ import sys
 from types import CodeType, ModuleType
 
 
-def add_to_code_set(object, code_set: set) -> bool:
+def add_to_code_set(object, code_set):
     """Add `object` to the list of functions to include.
     Returns True if a code object was added."""
     try:
@@ -43,9 +43,9 @@ def get_code_object(object):
 
     # The code to pick out a code object comes from code in dis.dis
     if inspect.ismethod(object):
-        object = object.__func__
+        object = object.func_code
 
-    for attr in ("f_code", "__code__", "gi_code", "ag_code", "cr_code"):
+    for attr in ("func_code", "f_code", "__code__", "gi_code", "ag_code", "cr_code"):
         if hasattr(object, attr):
             code = getattr(object, attr)
             break
@@ -55,7 +55,10 @@ def get_code_object(object):
         if len(t) > 0:
             return t[0][1]
         return None
-    return code if isinstance(code, CodeType) else None
+    if isinstance(code, CodeType):
+        return code
+    else:
+        return None
 
 
 def get_module_object(object):
@@ -87,7 +90,10 @@ def get_module_object(object):
                 # should be the same.)
                 return modules[0]
 
-    return sys.modules.get(module_name) if module_name is not None else None
+    if module_name is not None:
+        return sys.modules.get(module_name)
+    else:
+        return sys.modules.get(module_name)
 
 
 class TraceFilter:
@@ -101,7 +107,7 @@ class TraceFilter:
             self.add(item)
         return
 
-    def is_excluded(self, object) -> bool:
+    def is_excluded(self, object):
         """Return True if `object', a frame or function, is in the
         list of functions to exclude"""
 
@@ -124,7 +130,7 @@ class TraceFilter:
         self.excluded_modules = set()
         return
 
-    def add(self, object) -> bool:
+    def add(self, object):
         """Remove `frame_or_fn' from the list of functions to include"""
         if isinstance(object, ModuleType):
             self.excluded_modules.add(object)
@@ -138,7 +144,7 @@ class TraceFilter:
                 return False
         return add_to_code_set(object, self.excluded_code_objects)
 
-    def remove(self, object) -> bool:
+    def remove(self, object):
         """Remove `object' from the list of functions to include.
         Return True if an object was removed or False otherwise.
         """
