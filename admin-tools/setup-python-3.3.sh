@@ -24,4 +24,4 @@ cd $mydir
 cd $owd
 rm -v */.python-version || true
 
-checkout_finish python-3.0-to-3.2
+checkout_finish python-3.3-to-3.5
