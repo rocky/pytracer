@@ -1,5 +1,5 @@
 #!/bin/bash
-# Check out 3.3-to-3.5 branch and dependant development branches
+# Check out 3.0-to-3.2 branch and dependant development branches
 
 bs=${BASH_SOURCE[0]}
 if [[ $0 == $bs ]] ; then
@@ -7,7 +7,7 @@ if [[ $0 == $bs ]] ; then
     exit 1
 fi
 
-PYTHON_VERSION=3.3
+PYTHON_VERSION=3.0
 
 export PATH=$HOME/.pyenv/bin/pyenv:$PATH
 pytracer_owd=$(pwd)
@@ -15,9 +15,9 @@ mydir=$(dirname $bs)
 cd $mydir
 . ./checkout_common.sh
 (cd $fulldir/.. && \
-     setup_version python-spark python-3.3-to-3.5 && \
-     setup_version python-xdis python-3.3-to-3.5 && \
-     setup_version python-filecache python-3.3-to-3.5 && \
+     setup_version python-spark python-3.0-to-3.2 && \
+     setup_version python-xdis python-3.0-to-3.2 && \
+     setup_version python-filecache python-3.0-to-3.2 && \
      setup_version pycolumnize python-3.0-to-3.5 && \
      setup_version python-uncompyle6 python-3.0-to-3.2 \
     )
