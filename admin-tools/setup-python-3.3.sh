@@ -15,11 +15,11 @@ mydir=$(dirname $bs)
 cd $mydir
 . ./checkout_common.sh
 (cd $fulldir/.. && \
-     setup_version python-spark python-3.3-to-3.5 && \
-     setup_version python-xdis python-3.3-to-3.5 && \
-     setup_version python-filecache python-3.3-to-3.5 && \
-     setup_version pycolumnize python-3.0-to-3.5 && \
-     setup_version python-uncompyle6 python-3.0-to-3.2 \
+     setup_version python-spark python-3.3 && \
+     setup_version python-xdis python-3.3 && \
+     setup_version python-filecache python-3.3 && \
+     setup_version pycolumnize python-3.0 && \
+     setup_version python-uncompyle6 python-3.3 \
     )
 cd $owd
 rm -v */.python-version || true
