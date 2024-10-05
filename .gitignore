@@ -7,4 +7,5 @@
 /ChangeLog
 /build
 /dist
+/tmp
 __pycache__
