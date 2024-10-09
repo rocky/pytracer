@@ -22,6 +22,6 @@ cd $mydir
      setup_version python-uncompyle6 python-3.0-to-3.2 \
     )
 cd $pytracer_owd
-rm -v */.python-version 2>&/dev/null || true
+rm -v */.python-version 2>/dev/null || true
 
 checkout_finish python-3.0-to-3.2
