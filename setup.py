@@ -5,19 +5,20 @@ distutils setup (setup.py) for pytracer.
 This gets a bit of package info from __pkginfo__.py file
 """
 # Get the required package information
-from __pkginfo__ import \
-    author,           author_email,       classifiers,                    \
-    license,          long_description,   modname,          package_dir,  \
+from __pkginfo__ import (
+    author,           author_email,       classifiers,
+    license,          long_description,   modname,          package_dir,
     short_desc,       version,            web,              zip_safe
+)
 
 from setuptools import setup
 
 import os
 top_dir = os.path.dirname(__file__)
-README  = os.path.join(top_dir, 'README.rst')
+README  = os.path.join(top_dir, "README.rst")
 
 # Description in package will come from the README file.
-long_description = open(README).read() + '\n\n'
+long_description = open(README).read() + "\n\n"
 
 setup(
       author             = author,
@@ -28,7 +29,7 @@ setup(
       long_description   = long_description,
       name               = modname,
       # package_dir        = package_dir,
-      py_modules         = ['tracer', 'tracer.tracefilter'],
+      py_modules         = ["tracer.tracer", "tracer.tracefilter", "tracer.version"],
       url                = web,
       version            = version,
       zip_safe           = zip_safe
