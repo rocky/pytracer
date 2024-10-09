@@ -17,27 +17,45 @@
 
 import os.path as osp
 
-copyright   = '''Copyright (C) 2008-2010, 2015 Rocky Bernstein <rocky@gnu.org>.'''
-classifiers =  ['Development Status :: 4 - Beta',
-                'Environment :: Console',
-                'Intended Audience :: Developers',
-                'License :: OSI Approved :: GNU General Public License (GPL)',
-                'Operating System :: OS Independent',
-                'Programming Language :: Python',
-                'Topic :: Software Development :: Debuggers',
-                'Topic :: Software Development :: Libraries :: Python Modules',
-                ]
+copyright = """Copyright (C) 2008-2010, 2015, 2024 Rocky Bernstein <rocky@gnu.org>."""
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 2.4",
+    "Programming Language :: Python :: 2.5",
+    "Programming Language :: Python :: 2.6",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 3.0",
+    "Programming Language :: Python :: 3.1",
+    "Programming Language :: Python :: 3.2",
+    "Programming Language :: Python :: 3.3",
+    "Programming Language :: Python :: 3.4",
+    "Programming Language :: Python :: 3.5 ",
+    "Programming Language :: Python :: 3.6 ",
+    "Programming Language :: Python :: 3.7 ",
+    "Programming Language :: Python :: 3.8 ",
+    "Programming Language :: Python :: 3.9 ",
+    "Programming Language :: Python :: 3.10 ",
+    "Programming Language :: Python :: 3.11 ",
+    "Programming Language :: Python :: 3.12 ",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License (GPL)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Topic :: Software Development :: Debuggers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 # The rest in alphabetic order
-author       = "Rocky Bernstein"
+author = "Rocky Bernstein"
 author_email = "rocky@gnu.org"
 
-ftp_url      = None
-license      = 'GPL'
-modname      = 'tracer'
+ftp_url = None
+license = "GPL"
+modname = "tracer"
 
-short_desc   = 'Centralized sys.settrace management'
+short_desc = "Centralized sys.settrace management"
 # __version__.py sets variable __version__.
+
 
 def get_srcdir():
     filename = osp.normcase(osp.dirname(osp.abspath(__file__)))
@@ -50,15 +68,17 @@ def read(*rnames):
 
 exec(read("tracer", "version.py"))
 
-version      = __version__
-web          = 'http://github.com/rocky/pytracer'
+version = __version__
+web = "http://github.com/rocky/pytracer"
 
-package_dir  = {'': 'tracer'}
+package_dir = {"": "tracer"}
 
 # tracebacks in zip files are funky and not debuggable
-zip_safe     = False
+zip_safe = False
+
 
 def read(*rnames):
     return open(osp.join(osp.dirname(__file__), *rnames)).read()
 
-long_description   = ( read("README.rst") + '\n' )
+
+long_description = read("README.rst") + "\n"
