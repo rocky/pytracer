@@ -22,7 +22,7 @@ def trace_dispatch3(frame, event, arg):
     return trace_dispatch3
 
 
-def setup_function():
+def setup_function(self):
     global ignore_tracefilter
     ignore_tracefilter = TraceFilter()
     return

@@ -1,6 +1,4 @@
 include COPYING
 include Makefile
 include NEWS
-include tracer/__version__.py
 include __pkginfo__.py
-include test/Makefile

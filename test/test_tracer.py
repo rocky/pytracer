@@ -33,7 +33,7 @@ def method_trace_dispatch(frame, event, arg):
     return method_trace_dispatch
 
 
-def setup_function():
+def setup_function(self):
     global trace_lines
     global ignore_tracefilter
     trace_lines = []
