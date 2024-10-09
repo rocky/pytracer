@@ -21,7 +21,7 @@ cd $mydir
      setup_version pycolumnize python-3.0 && \
      setup_version python-uncompyle6 python-3.3 \
     )
-cd $owd
-rm -v */.python-version || true
+cd $pytracer_owd
+rm -v */.python-version 2>/dev/null || true
 
-checkout_finish python-3.0-to-3.2
+checkout_finish python-3.3-to-3.5
