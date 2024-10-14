@@ -43,7 +43,11 @@ done
 echo "--- python 2.7 wheel ---"
 pyenv local 2.7.18
 python setup.py bdist_wheel
+<<<<<<< HEAD
 echo === $pyversion ===
+=======
+mv -v dist/${PYMODULE_NAME}-$__version__-{py2.py3,py2}-none-any.whl
+>>>>>>> master
 
 # PyPI can only have one source tarball.
 # Tarballs can get created from the above setup, so make sure to remove them since we want
@@ -51,6 +55,10 @@ echo === $pyversion ===
 
 tarball=dist/${PYMODULE_NAME}-$__version__-tar.gz
 if [[ -f $tarball ]]; then
+<<<<<<< HEAD
     rm -v dist/${PYMOUDLE_NAME}-$__version__-tar.gz
+=======
+    rm -v dist/${PYMODULE_NAME}-$__version__-tar.gz
+>>>>>>> master
 fi
 finish
