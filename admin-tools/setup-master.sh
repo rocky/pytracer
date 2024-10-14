@@ -6,7 +6,7 @@ if [[ $0 == $bs ]] ; then
     exit 1
 fi
 
-PYTHON_VERSION=3.12
+PYTHON_VERSION=3.13
 
 mydir=$(dirname $bs)
 pytracer_owd=$(pwd)
