@@ -1,5 +1,5 @@
 include COPYING
 include Makefile
-include NEWS
+include NEWS.md
 include __pkginfo__.py
 include test/Makefile
