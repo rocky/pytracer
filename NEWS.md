@@ -4,6 +4,7 @@
 * Allow filtering by module. This makes use in ``trepan3k`` and other places that want to use simpler and more powerful.
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 * Modernize for 3.13 (last release was for Python 2.7!)
   - redo tests in `pytest`
 
@@ -12,11 +13,16 @@ API incompatibility:
 =======
 =======
 >>>>>>> master
+=======
+>>>>>>> master
 * Modernize for 3.13 (the last release was for Python 2.7!) - redo tests in `pytest`
 
 API incompatibility:
   `is_included` (in a trace filter) is now called `is_excluded` (with respect to the code being debugged)
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> master
+=======
 >>>>>>> master
 =======
 >>>>>>> master
