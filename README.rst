@@ -45,6 +45,6 @@ We support running this from older versions of Python in various git branches:
 .. |downloads| image:: https://img.shields.io/pypi/dd/spark.svg
 .. |buildstatus| image:: https://travis-ci.org/rocky/pytracer.svg :target: https://travis-ci.org/rocky/pytracer
 .. |Supported Python Versions| image:: https://img.shields.io/pypi/pyversions/spark_parser.svg
-.. |Latest Version| image:: https://badge.fury.io/py/tracer.svg :target: https://badge.fury.io/py/pytracer
+.. |Latest Version| image:: https://badge.fury.io/py/tracer.svg :target: https://pypi.org/project/tracer/
 .. |Pypi Installs| image:: https://pepy.tech/badge/pytracer/month
-.. |packagestatus| image:: https://repology.org/badge/vertical-allrepos/python:spark.svg :target: https://repology.org/project/python:tracer/versions
+.. |packagestatus| image:: https://repology.org/badge/vertical-allrepos/python:tracer.svg :target: https://repology.org/project/python:tracer/versions
