@@ -1,5 +1,7 @@
 |CircleCI| |PyPI Installs| |Supported Python Versions|
 
+|PackageStatus|
+
 Centralized Trace management using ``sys.settrace``.
 
 We allow several trace hooks to get registered and unregistered and

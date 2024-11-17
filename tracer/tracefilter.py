@@ -17,6 +17,7 @@
 import inspect
 import os
 import sys
+from functools import cache
 from types import CodeType, ModuleType
 from typing import Any, Iterable, Optional, Set
 
@@ -58,6 +59,13 @@ def get_code_object(object: Any) -> Optional[CodeType]:
         return None
     return code if isinstance(code, CodeType) else None
 
+@cache
+def get_modules_for_path(module_values, module_path) -> tuple:
+    return tuple(
+        module
+        for module in module_values
+        if hasattr(module, "__file__") and module.__file__ == module_path
+        )
 
 def get_module_object(object: Any) -> Optional[ModuleType]:
     """Given a module name, frame, or code object, return the
@@ -78,11 +86,10 @@ def get_module_object(object: Any) -> Optional[ModuleType]:
     if isinstance(module_path, str):
         if os.path.exists(module_path):
             # from sys.modules, pick out those modules whose filename is "module_path".
-            modules = [
-                module
-                for module in sys.modules.values()
-                if hasattr(module, "__file__") and module.__file__ == module_path
-            ]
+
+            ## FIXME: the below is too slow. Cache sys.modules and
+            ## sys.modules.values using lru_cache!
+            modules = get_modules_for_path(sys.modules.values(), module_path)
             if len(modules):
                 # There is at least one matching module. (They all
                 # should be the same.)
