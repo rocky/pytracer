@@ -19,7 +19,7 @@ import os
 import sys
 from functools import cache
 from types import CodeType, ModuleType
-from typing import Any, Iterable, Optional, Set
+from typing import Any, Dict, Iterable, Optional, Set
 
 
 def add_to_code_set(object: Any, code_set: Set[CodeType]) -> bool:
@@ -59,8 +59,10 @@ def get_code_object(object: Any) -> Optional[CodeType]:
         return None
     return code if isinstance(code, CodeType) else None
 
+PATH2MODULE: Dict[str, ModuleType] = {}
+
 @cache
-def get_modules_for_path(module_values, module_path) -> tuple:
+def get_modules_for_path(module_values, module_path: str) -> tuple:
     return tuple(
         module
         for module in module_values
@@ -84,6 +86,9 @@ def get_module_object(object: Any) -> Optional[ModuleType]:
         module_name = object.__module__
 
     if isinstance(module_path, str):
+        module_found = PATH2MODULE.get(module_path)
+        if module_found is not None:
+            return module_found
         if os.path.exists(module_path):
             # from sys.modules, pick out those modules whose filename is "module_path".
 
@@ -93,6 +98,7 @@ def get_module_object(object: Any) -> Optional[ModuleType]:
             if len(modules):
                 # There is at least one matching module. (They all
                 # should be the same.)
+                PATH2MODULE[module_path] = modules[0]
                 return modules[0]
 
     return sys.modules.get(module_name) if module_name is not None else None
