@@ -1,6 +1,6 @@
 #!/bin/bash
 GITHUB_DIR=pytracer
-PYMODULE_NAME=pytracer
+PYMODULE_NAME=tracer
 
 # FIXME put some of the below in a common routine
 function finish {
@@ -19,7 +19,7 @@ if ! source ./setup-python-3.0.sh ; then
 fi
 
 cd ..
-source $PACKAGE/version.py
+source $PYMODULE_NAME/version.py
 if [[ ! -n $__version__ ]]; then
     echo "You need to set __version__ first"
     exit 1
@@ -56,8 +56,8 @@ done
 
 python ./setup.py sdist
 
-tarball=dist/${PYMOUDLE_NNAME}-${__version__}.tar.gz
+tarball=dist/${PYMODULE_NAME}-${__version__}.tar.gz
 if [[ -f $tarball ]]; then
-    mv -v $tarball dist/${PACKAGE}_30-${__version__}.tar.gz
+    mv -v $tarball dist/${PYMODULE_NAME}_30-${__version__}.tar.gz
 fi
 finish

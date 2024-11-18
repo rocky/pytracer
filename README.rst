@@ -1,6 +1,6 @@
-|CircleCI| |Pypi Installs| |Latest Version| |Supported Python Versions|
+|CircleCI| |PyPI Installs| |Supported Python Versions|
 
-|packagestatus|
+|PackageStatus|
 
 Centralized Trace management using ``sys.settrace``.
 
@@ -17,7 +17,7 @@ This package is available from PyPI::
 
     $ pip install tracer
 
-However if you want to install from the github source::
+However, if you want to install from the GitHub source::
 
     $ pip install       # creates wheel and install
 
@@ -45,6 +45,6 @@ We support running this from older versions of Python in various git branches:
 .. |downloads| image:: https://img.shields.io/pypi/dd/spark.svg
 .. |buildstatus| image:: https://travis-ci.org/rocky/pytracer.svg :target: https://travis-ci.org/rocky/pytracer
 .. |Supported Python Versions| image:: https://img.shields.io/pypi/pyversions/spark_parser.svg
-.. |Latest Version| image:: https://badge.fury.io/py/tracer.svg :target: https://badge.fury.io/py/pytracer
-.. |Pypi Installs| image:: https://pepy.tech/badge/pytracer/month
-.. |packagestatus| image:: https://repology.org/badge/vertical-allrepos/python:spark.svg :target: https://repology.org/project/python:tracer/versions
+.. |Latest Version| image:: https://badge.fury.io/py/tracer.svg :target: https://pypi.org/project/tracer/
+.. |PyPI Installs| image:: https://pepy.tech/badge/pytracer/month
+.. |PackageStatus| image:: https://repology.org/badge/vertical-allrepos/python:tracer.svg :target: https://repology.org/project/python:tracer/versions
