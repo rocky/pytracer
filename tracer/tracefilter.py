@@ -17,7 +17,7 @@
 import inspect
 import os
 import sys
-from functools import cache
+from functools import lru_cache
 from types import CodeType, ModuleType
 from typing import Any, Dict, Iterable, Optional, Set
 
@@ -61,7 +61,7 @@ def get_code_object(object: Any) -> Optional[CodeType]:
 
 PATH2MODULE: Dict[str, ModuleType] = {}
 
-@cache
+@lru_cache(maxsize=128)
 def get_modules_for_path(module_values, module_path: str) -> tuple:
     return tuple(
         module
