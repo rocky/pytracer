@@ -17,7 +17,6 @@
 import inspect
 import os
 import sys
-from functools import lru_cache
 from types import CodeType, ModuleType
 
 
@@ -63,8 +62,7 @@ def get_code_object(object):
 
 PATH2MODULE = {}
 
-@lru_cache(maxsize=128)
-def get_modules_for_path(module_values, module_path: str) -> tuple:
+def get_modules_for_path(module_values, module_path):
     return tuple(
         module
         for module in module_values
