@@ -17,9 +17,10 @@
 import inspect
 import os
 import sys
-from functools import lru_cache
 from types import CodeType, ModuleType
 
+if sys.version_info[:2] >= (3, 2):
+    from functools import lru_cache
 
 def add_to_code_set(object, code_set: set) -> bool:
     """Add `object` to the list of functions to include.
@@ -60,13 +61,23 @@ def get_code_object(object):
 
 PATH2MODULE = {}
 
-@lru_cache(maxsize=128)
-def get_modules_for_path(module_values, module_path: str) -> tuple:
-    return tuple(
-        module
-        for module in module_values
-        if hasattr(module, "__file__") and module.__file__ == module_path
-        )
+# FIXME: I can't figure out how to write a decorator for this
+# in 3.0..3.1. So just do it this way
+if sys.version_info[:2] >= (3, 2):
+    @lru_cache(maxsize=128)
+    def get_modules_for_path(module_values, module_path: str) -> tuple:
+        return tuple(
+            module
+            for module in module_values
+            if hasattr(module, "__file__") and module.__file__ == module_path
+            )
+else:
+    def get_modules_for_path(module_values, module_path: str) -> tuple:
+        return tuple(
+            module
+            for module in module_values
+            if hasattr(module, "__file__") and module.__file__ == module_path
+            )
 
 def get_module_object(object):
     """Given a module name, frame, or code object, return the
