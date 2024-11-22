@@ -58,7 +58,7 @@ def get_code_object(object):
         return None
     return code if isinstance(code, CodeType) else None
 
-PATH2MODULE: Dict[str, ModuleType] = {}
+PATH2MODULE = {}
 
 @lru_cache(maxsize=128)
 def get_modules_for_path(module_values, module_path: str) -> tuple:

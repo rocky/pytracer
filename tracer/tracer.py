@@ -32,18 +32,7 @@ HOOKS = []  # List of Bunch(trace_func, event_set)
 STARTED_STATE = False  # True if we are tracing.
 # FIXME: in 2.6 we can use sys.gettrace
 
-# The opcode event starts in Python 3.7
-
 ALL_EVENT_NAMES = (
-    "c_call",
-    "c_exception",
-    "c_return",
-    "call",
-    "exception",
-    "line",
-    "opcode",
-    "return",
-) if sys.version_info[:2] >= (3, 7) else (
     "c_call",
     "c_exception",
     "c_return",
@@ -61,18 +50,8 @@ EVENT2SHORT = {
     "call": "->",
     "exception": "!!",
     "line": "--",
-    "opcode": "..",
-    "return": "<-",
-} if sys.version_info[:2] >= (3, 7) else {
-        "c_call": "C>",
-    "c_exception": "C!",
-    "c_return": "C<",
-    "call": "->",
-    "exception": "!!",
-    "line": "--",
     "return": "<-",
 }
-
 ALL_EVENTS = frozenset(ALL_EVENT_NAMES)
 # TraceEvent = Enum("TraceEvent", ALL_EVENT_NAMES)
 
