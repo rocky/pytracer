@@ -46,6 +46,7 @@ ALL_EVENT_NAMES = (
     "call",
     "exception",
     "line",
+    "opcode",
     "return",
 )
 
@@ -57,6 +58,7 @@ EVENT2SHORT = {
     "call": "->",
     "exception": "!!",
     "line": "--",
+    "opcode": "..",
     "return": "<-",
 }
 
