@@ -52,7 +52,6 @@ EVENT2SHORT = {
     "line": "--",
     "return": "<-",
 }
-
 ALL_EVENTS = frozenset(ALL_EVENT_NAMES)
 # TraceEvent = Enum("TraceEvent", ALL_EVENT_NAMES)
 
