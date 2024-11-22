@@ -17,6 +17,7 @@
 import inspect
 import os
 import sys
+from functools import lru_cache
 from types import CodeType, ModuleType
 
 if sys.version_info[:2] >= (3, 2):
