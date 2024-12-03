@@ -17,7 +17,16 @@
 import inspect
 import os
 import sys
-from functools import cache
+
+try:
+    from functools import cache
+except ImportError:
+    # Compatibility to allow running this code from older Python
+    from functools import lru_cache
+    def cache(user_function, /):
+        'Simple lightweight unbounded cache.  Sometimes called "memoize".'
+        return lru_cache(maxsize=None)(user_function)
+
 from types import CodeType, ModuleType
 from typing import Any, Dict, Iterable, Optional, Set
 
