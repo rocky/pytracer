@@ -3,3 +3,8 @@ include Makefile
 include NEWS.md
 include __pkginfo__.py
 include test/Makefile
+<<<<<<< Updated upstream
+=======
+recursive-include tracer *.py
+recursive-include test *.py
+>>>>>>> Stashed changes
