@@ -35,7 +35,6 @@ setup(
       packages=packages,
       py_modules         = ["tracer", "tracer.tracefilter", "tracer"],
       test_suite         = 'nose.collector',
->>>>>>> python-3.3-to-3.5
       url                = web,
       version            = version,
       zip_safe           = zip_safe
