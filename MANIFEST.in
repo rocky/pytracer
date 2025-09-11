@@ -2,3 +2,6 @@ include COPYING
 include Makefile
 include NEWS.md
 include __pkginfo__.py
+include test/Makefile
+recursive-include tracer *.py
+recursive-include test *.py
