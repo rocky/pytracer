@@ -9,7 +9,6 @@ from __pkginfo__ import \
     author,           author_email,       classifiers,                    \
     license,          long_description,   modname,                        \
     short_desc,       version,            web,              zip_safe
-)
 
 from setuptools import find_packages, setup
 
