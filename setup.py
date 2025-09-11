@@ -7,17 +7,22 @@ This gets a bit of package info from __pkginfo__.py file
 # Get the required package information
 from __pkginfo__ import \
     author,           author_email,       classifiers,                    \
-    license,          long_description,   modname,          package_dir,  \
+    license,          long_description,   modname,                        \
     short_desc,       version,            web,              zip_safe
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 import os
+
 top_dir = os.path.dirname(__file__)
 README  = os.path.join(top_dir, 'README.rst')
 
 # Description in package will come from the README file.
 long_description = open(README).read() + '\n\n'
+
+__import__("pkg_resources")
+
+packages = find_packages()
 
 setup(
       author             = author,
@@ -27,8 +32,8 @@ setup(
       license            = license,
       long_description   = long_description,
       name               = modname,
-      # package_dir        = package_dir,
-      py_modules         = ['tracer', 'tracer.tracefilter'],
+      packages=packages,
+      py_modules         = ["tracer", "tracer.tracefilter", "tracer"],
       test_suite         = 'nose.collector',
       url                = web,
       setup_requires     = ['nose>=1.0'],
