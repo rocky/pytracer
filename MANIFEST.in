@@ -3,5 +3,13 @@ include Makefile
 include NEWS.md
 include __pkginfo__.py
 include test/Makefile
+<<<<<<< HEAD
 recursive-include trepan *.py
 recursive-include test *.py
+=======
+<<<<<<< Updated upstream
+=======
+recursive-include tracer *.py
+recursive-include test *.py
+>>>>>>> Stashed changes
+>>>>>>> master
