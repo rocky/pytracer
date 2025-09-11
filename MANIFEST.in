@@ -3,3 +3,5 @@ include Makefile
 include NEWS.md
 include __pkginfo__.py
 include test/Makefile
+recursive-include trepan *.py
+recursive-include test *.py
