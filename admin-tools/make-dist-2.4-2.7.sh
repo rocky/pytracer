@@ -49,6 +49,8 @@ mv -v dist/${PYMODULE_NAME}-$__version__-{py2.py3,py2}-none-any.whl
 # Tarballs can get created from the above setup, so make sure to remove them since we want
 # the tarball from master.
 
+python ./setup.py sdist
+
 tarball=dist/${PYMODULE_NAME}-$__version__-tar.gz
 if [[ -f $tarball ]]; then
     rm -v dist/${PYMODULE_NAME}-$__version__-tar.gz
