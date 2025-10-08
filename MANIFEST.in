@@ -2,9 +2,12 @@ include COPYING
 include Makefile
 include NEWS.md
 include __pkginfo__.py
+<<<<<<< Updated upstream
 include test/Makefile
 <<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 recursive-include tracer *.py
 recursive-include test *.py
 >>>>>>> Stashed changes
