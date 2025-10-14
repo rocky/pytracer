@@ -9,16 +9,4 @@ fi
 
 PYTHON_VERSION=3.6
 
-export PATH=$HOME/.pyenv/bin/pyenv:$PATH
-pytracer_owd=$(pwd)
-mydir=$(dirname $bs)
-cd $mydir
-. ./checkout_common.sh
-(cd $fulldir/.. && \
-     setup_version python-uncompyle6 master && \
-     setup_version python-filecache master && \
-     setup_version pycolumnize master && \
-     setup_version python-xdis python-3.6 \
-    )
-
-checkout_finish python-3.6-to-3.10
+git checkout python-3.6-to-3.10 && git pull && pyenv local $PYTHON_VERSION
