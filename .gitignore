@@ -3,6 +3,7 @@
 /*.egg-info
 /.cache
 /.eggs
+/.jython_cache
 /.python-version
 /ChangeLog
 /build
