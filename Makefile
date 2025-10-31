@@ -6,9 +6,10 @@
 
 PYTHON ?= python
 PYTHON3 ?= python3
+RM     ?= rm
 GIT2CL ?= git2cl
 
-PHONY=check clean dist distclean test rmChangeLog
+PHONY=check clean clean_pyc dist distclean test rmChangeLog
 
 all: check
 
@@ -16,8 +17,12 @@ all: check
 check:
 	$(PYTHON) -m pytest test
 
+#: Remove .pyc files
+clean_pyc:
+	( cd tracer && $(RM) -f *.pyc */*.pyc )
+
 #: Clean up temporary files
-clean:
+clean: clean_pyc
 	$(PYTHON) ./setup.py $@
 
 #: Create source (tarball) and binary (egg) distribution
