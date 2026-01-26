@@ -6,10 +6,15 @@ if [[ $0 == $bs ]] ; then
     exit 1
 fi
 
-PYTHON_VERSION=3.13
+PYTHON_VERSION=3.14
 
 mydir=$(dirname $bs)
 pytracer_owd=$(pwd)
 cd $mydir
 . ./checkout_common.sh
+fulldir=$(readlink -f $mydir)
+
+(cd $fulldir/.. && setup_version python-xdis master )
+cd $pytracer_owd
+rm -v */.python-version 2>/dev/null || true
 checkout_finish master
