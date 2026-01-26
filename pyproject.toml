@@ -14,12 +14,12 @@ name = "tracer"
 description = "Centralized sys.settrace management"
 dependencies = []
 readme = "README.rst"
-license = {text = "GPL"}
+license = "GPL-3.0-or-later"
+# license = {text = "GPL"}
 keywords = ["debugger", "profiling"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Programming Language :: Python :: 2.4",
@@ -39,6 +39,8 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dynamic = ["version"]
 
