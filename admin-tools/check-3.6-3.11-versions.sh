@@ -3,7 +3,7 @@
 check_pytracer_36_owd=$(pwd)
 
 cd $(dirname ${BASH_SOURCE[0]})
-if ! source ./pyenv-3.6-3.10-versions ; then
+if ! source ./pyenv-3.6-3.11-versions ; then
     exit $?
 fi
 if ! source ./setup-python-3.6.sh ; then
