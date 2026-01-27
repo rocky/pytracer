@@ -1,5 +1,5 @@
 """
-Centralized Trace management of ``sys.settrace``.
+Centralized Trace management of ``sys.monitor``.
 """
 
 from tracer.tracefilter import (
@@ -7,7 +7,7 @@ from tracer.tracefilter import (
     get_module_object,
 )
 
-from tracer.tracer import (
+from tracer.sys_monitoring import (
     ALL_EVENT_NAMES,
     ALL_EVENTS,
     DEFAULT_ADD_HOOK_OPTS,

@@ -51,8 +51,9 @@ def get_code_object(object: Any) -> Optional[CodeType]:
     None.
     """
     code = None
+    if isinstance(object, CodeType):
+        return object
 
-    # The code to pick out a code object comes from code in dis.dis
     if inspect.ismethod(object):
         object = object.__func__
 
@@ -118,14 +119,13 @@ class TraceFilter:
     certain frames, functions, classes, or modules should be skipped/included in tracing.
     """
 
-    def __init__(self, exclude_items: Iterable = list()):
+    def __init__(self, exclude_items: Iterable) -> Iterable:
         self.clear()
-        for item in exclude_items:
-            self.add(item)
+        self.append(exclude_items)
         return
 
     def is_excluded(self, object) -> bool:
-        """Return True if `object', a frame or function, is in the
+        """Return True if `object', a frame, function or module, is in the
         list of functions to exclude"""
 
         if isinstance(object, ModuleType):
@@ -160,6 +160,12 @@ class TraceFilter:
             else:
                 return False
         return add_to_code_set(object, self.excluded_code_objects)
+
+    def append(self, exclude_items: Iterable):
+        """Remove `frame_or_fn' from the list of functions to include"""
+        for item in exclude_items:
+            self.add(item)
+        return
 
     def remove(self, object: Any) -> bool:
         """Remove `object' from the list of functions to include.
