@@ -6,6 +6,12 @@ from tracer.tracefilter import TraceFilter, add_to_code_set
 trace_lines = []
 
 def test_basic():
+
+    # See that we can pass TraceFilter nothing and have it create a filter.
+    filter = TraceFilter()
+    assert len(filter.excluded_modules) == 0
+    assert len(filter.excluded_code_objects) == 0
+
     filter = TraceFilter([test_basic])
     assert len(filter.excluded_modules) == 0
     assert len(filter.excluded_code_objects) == 1

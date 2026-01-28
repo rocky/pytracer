@@ -36,7 +36,7 @@ import inspect
 import sys
 
 from types import CodeType
-from typing import Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, Optional, Set
 
 E = sys.monitoring.events
 
@@ -44,11 +44,7 @@ E = sys.monitoring.events
 MAX_TOOL_IDS = 6
 TOOL_ID_RANGE = range(MAX_TOOL_IDS)
 
-# A list of the registered hooks keyed by sys.monitoring.events.
-HOOKS: List[Dict[int, Callable]] = [None] * MAX_TOOL_IDS
-
 # A mapping of tool ids (a number) to tool names (as string)
-TOOL_NAME: List[Optional[str]] = [None] * MAX_TOOL_IDS
 
 # We run trace_func if the event is in event_set.
 STARTED_STATE: Dict[int, bool] = {}
@@ -96,6 +92,39 @@ EVENT2SHORT = {
 
 ALL_EVENTS = frozenset(ALL_EVENT_NAMES)
 
+class FixedList:
+    """
+    A class fixed-length list.
+    """
+    def __init__(self, initial_value: Optional[Any], size: int):
+        self._data = [initial_value] * size
+
+    def __getitem__(self, index: int):
+        return self._data[index]
+
+    def __setitem__(self, index: int, value: Optional[Dict[int, Callable]]):
+        self._data[index] = value
+
+    def __len__(self):
+        return len(self._data)
+
+    def __repr__(self):
+        return repr(self._data)
+
+    def index(self, start: int) -> int:
+        """Return first index of value.
+
+        Raises ValueError if the value is not present.
+        """
+        return self._data.index(start)
+
+
+# A list of the registered hooks keyed by sys.monitoring.events.
+HOOKS = FixedList(None, MAX_TOOL_IDS)
+
+# A list of tool names
+TOOL_NAME = FixedList(None, MAX_TOOL_IDS)
+
 debug = False  # Setting true
 
 # Build a lookup table from sys.monitoring.events
@@ -124,7 +153,7 @@ class PytraceException(Exception):
 
 def check_tool_id(tool_id: int):
     if tool_id not in TOOL_ID_RANGE:
-        PytraceException(f"tool id {tool_id} is not in {range(MAX_TOOL_IDS)}")
+        raise PytraceException(f"tool id {tool_id} is not in {range(MAX_TOOL_IDS)}")
 
 def null_trace_hook(*args, **kwargs):
     """A trace hook that doesn't do anything. Can use this to "turn off"
@@ -190,16 +219,16 @@ def add_trace_callbacks(
     return tool_id
 
 
-def size(tool_id: int) -> int:
-    """Returns a count of th number of trace monitoring hooks installed through
+def size() -> int:
+    """Returns a count of the number of trace monitoring hooks installed through
     our mechanism. This is an integer in TOOL_ID_RANGE."""
-    check_tool_id(tool_id)
-    return sum(1 for item in HOOKS if item is not None)
+    return sum(1 for item in TOOL_NAME if item is not None)
 
 # FIXME allow either a name or id
 def is_started(tool_id: int) -> bool:
     """Returns _True_ if monitoring has been started for `hook_id`."""
-    size(tool_id) == 0
+    check_tool_id(tool_id)
+    HOOKS[tool_id] is not None
 
 
 def free_tool_id(tool_id):
@@ -211,7 +240,7 @@ def free_tool_id(tool_id):
         sys.monitoring.free_tool_id(tool_id)
 
     if registered_tool_name != TOOL_NAME[tool_id]:
-        PytraceException(f"tool name {tool_id} is registered under name {registered_tool_name} not {TOOL_NAME[tool_id]}")
+        raise PytraceException(f"tool name {tool_id} is registered under name {registered_tool_name} not {TOOL_NAME[tool_id]}")
 
     HOOKS[tool_id] = [None] * (MAX_TOOL_IDS - 1)
     return
@@ -287,6 +316,8 @@ def register_tool_by_name(
 
         TOOL_NAME[tool_id] = tool_name
         sys.monitoring.use_tool_id(tool_id, tool_name)
+    elif tool_id is None:
+        tool_id = registered_tool_id
     else:
         if registered_tool_id != tool_id:
             if can_change_tool_id:

@@ -119,7 +119,7 @@ class TraceFilter:
     certain frames, functions, classes, or modules should be skipped/included in tracing.
     """
 
-    def __init__(self, exclude_items: Iterable) -> Iterable:
+    def __init__(self, exclude_items: Iterable=[]) -> Iterable:
         self.clear()
         self.append(exclude_items)
         return
