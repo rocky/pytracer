@@ -202,19 +202,20 @@ def add_trace_callbacks(
 
         # FIXME check for TOOL_NAME all full.
         TOOL_NAME[tool_id] = tool_name
-        if not (old_tool := sys.monitoring.get_tool(i)):
-            if trace_callbacks is not None and old_tool != trace_callbacks:
-                print("adding a trace_callback where it already appeared")
-                pass
-            pass
-        else:
+        if (old_tool := sys.monitoring.get_tool(i)) is None:
             sys.monitoring.use_tool_id(tool_id, tool_name)
+        else:
+            if trace_callbacks is not None and old_tool != tool_name:
+                print("Not adding a trace_callback where it already appeared")
+                return None
+            pass
+
     else:
         if not sys.monitoring.get_tool(tool_id):
             sys.monitoring.use_tool_id(tool_id, tool_name)
 
     HOOKS[tool_id] = trace_callbacks
-    register_events(trace_callbacks)
+    register_events(tool_id, trace_callbacks)
     return tool_id
 
 
@@ -248,7 +249,8 @@ def free_tool_id(tool_id):
     return
 
 # FIXME add optional event mask
-def register_events(trace_callbacks: Dict[int, Callable]) -> int:
+def register_events(tool_id: int, trace_callbacks: Dict[int, Callable]) -> int:
+    check_tool_id(tool_id)
     events = 0
     sys.monitoring.set_events(tool_id, events)
     for event_id, trace_callback_func in trace_callbacks.items():
@@ -365,7 +367,7 @@ def start(
             # This is not the first start. So set
             # sys.monitoring to track these events that
             # we have callbacks for.
-            register_events(HOOKS[tool_id])
+            register_events(tool_id, HOOKS[tool_id])
         return tool_id
     return add_trace_callbacks(tool_name, trace_callbacks)
 
@@ -444,7 +446,7 @@ if __name__ == "__main__":
         [
             add_trace_callbacks,
             check_tool_id,
-            find_hook,
+            find_hook_by_name,
             importlib._bootstrap,
             is_started,
             register_events,
