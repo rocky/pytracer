@@ -163,18 +163,17 @@ def null_trace_hook(*args, **kwargs):
     pass
 
 
-def find_hook(tool_name: str) -> Optional[dict]:
-    """Find `trace_func` in `HOOKS`, and return the index of it, or
-    None if it is not found."""
+def find_hook_by_name(tool_name: str) -> Optional[int]:
+    """Find tool id when given a tool name or return None if it is not found."""
     try:
         return TOOL_NAME.index(tool_name)
     except ValueError:
         return None
 
 
-def find_hook_by_id(tool_id: int) -> Optional[dict]:
-    """Find `trace_func` in `HOOKS` by ID, and return the index of it, or
-    None if it is not found."""
+def find_hook_by_id(tool_id: int) -> Optional[str]:
+    """Find tool name given a tool id and return that, or
+    return None if it is not found."""
     check_tool_id(tool_id)
     try:
         return TOOL_NAME[tool_id]
@@ -192,7 +191,7 @@ def add_trace_callbacks(
     sure it is a function.
     """
 
-    if (tool_id := find_hook(tool_name)) is None:
+    if (tool_id := find_hook_by_name(tool_name)) is None:
         for i, tool_name_entry in enumerate(TOOL_NAME):
             if tool_name_entry is None and sys.monitoring.get_tool(i) is None:
                 tool_id = i
@@ -233,16 +232,19 @@ def is_started(tool_id: int) -> bool:
 
 def free_tool_id(tool_id):
     """Remove hooks in tool_id the from list of callback functions run
-    when monitoring is turned on.
+    when monitoring is turned on. We only remove those hooks that are associated
+    with our callbacks.
     """
     check_tool_id(tool_id)
-    if (registered_tool_name := sys.monitoring.get_tool(tool_id)):
+    registered_tool_name = sys.monitoring.get_tool(tool_id)
+    if registered_tool_name is not None:
+        if registered_tool_name != TOOL_NAME[tool_id]:
+            raise PytraceException(f"tool name {tool_id} is registered under name {registered_tool_name} not {TOOL_NAME[tool_id]}")
+
         sys.monitoring.free_tool_id(tool_id)
 
-    if registered_tool_name != TOOL_NAME[tool_id]:
-        raise PytraceException(f"tool name {tool_id} is registered under name {registered_tool_name} not {TOOL_NAME[tool_id]}")
-
-    HOOKS[tool_id] = [None] * (MAX_TOOL_IDS - 1)
+    HOOKS[tool_id] = None
+    TOOL_NAME[tool_id] = None
     return
 
 # FIXME add optional event mask
@@ -293,8 +295,10 @@ def register_tool_by_name(
     if tool_id is not None:
         check_tool_id(tool_id)
 
-        # See if tool_id has bee regisgtered, and if so, has the name we expect.
-        if (registered_tool_name := sys.monitoring.get_tool(tool_id)) != tool_name:
+        registered_tool_name = sys.monitoring.get_tool(tool_id)
+        # See if tool_id has been sys.monitor registered. If so, does
+        # it have the name we expect?
+        if registered_tool_name is not None and registered_tool_name != tool_name:
             # Not the tool name we expect, but if we can change it, do so.
             if can_change_tool_id:
                 sys.monitoring.clear_tool_id(tool_id)
@@ -305,7 +309,7 @@ def register_tool_by_name(
                     + f"so it cannot be used as {tool_name}. tool_id is not specified as changable."
                 )
 
-    elif (registered_tool_id := find_hook(tool_name)) is None:
+    elif (registered_tool_id := find_hook_by_name(tool_name)) is None:
         # tool_id was not registered. Find a free tool_id slot.
         for i, tool_name_entry in enumerate(TOOL_NAME):
             if tool_name_entry is None and sys.monitoring.get_tool(i) is None:
@@ -400,7 +404,7 @@ def stop(
 
     """
 
-    if (tool_id := find_hook(tool_name)) is None:
+    if (tool_id := find_hook_by_name(tool_name)) is None:
         return None
 
     if events_set is None:
