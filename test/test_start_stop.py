@@ -1,8 +1,9 @@
 """Unit tests for Tracer.trace"""
 
+import os
 import sys
 from types import CodeType
-from typing import Any, NamedTuple
+from typing import Any, List, NamedTuple
 
 import tracer
 import tracer.tracefilter as tracefilter
@@ -10,6 +11,7 @@ from tracer.sys_monitoring import (
     add_trace_callbacks,
     TOOL_ID_RANGE,
     free_tool_id,
+    start,
     stop,
 )
 
@@ -21,10 +23,39 @@ E = sys.monitoring.events
 trace_lines = []
 ignore_filter = tracefilter.TraceFilter([tracer.tracefilter, tracer.sys_monitoring])
 
+
 class Entry(NamedTuple):
     event: str
     code_str: str
     arg: Any
+
+
+def assert_check_lines(got: list, expected: List[List[str, str]]):
+    if os.environ.get("DEBUG"):
+        from pprint import pp
+
+        pp(got)
+
+    got_length = len(got)
+    for i, expected_entry in enumerate(expected):
+        if i < got_length:
+            got_entry = got[i]
+            got_check = [got_entry.event, got_entry.code_str]
+            if expected_entry != got_check:
+                print(f"Trace line: {got_entry}")
+            assert (
+                expected_entry == got_check
+            ), f"Mismatch at {i}. Expected {expected_entry}; got {got_check}"
+        else:
+            assert False, f"Extra entries expected at {i}\n: expected_entry"
+    expected_length = len(expected)
+    if got_length > expected_length:
+        print(f"Extra entry strating at\n: {got[expected_length]}")
+
+    assert (
+        got_length == expected_length
+    ), "Extra entries traced {got_length} vs. {expected_length}"
+    return
 
 
 def code_short(code: CodeType) -> str:
@@ -77,40 +108,57 @@ def test_basic_start_stop():
     }
 
     def foo(*args):
-        print(f"foo called with {args}")
+        print(f"test function foo() called with {args}")
 
     def bar():
         foo("foo")
         foo("bar")
 
+    global trace_lines
     hook_name = "trace_basic_start_stop"
+    print("\n")
     add_trace_callbacks(hook_name, callback_hooks)
     eval("1+2")
     foo()
     stop(hook_name)
+    assert_check_lines(
+        trace_lines,
+        [
+            ["line", "test_basic_start_stop in test_start_stop.py"],  # eval("1+2")
+            ["call", "test_basic_start_stop in test_start_stop.py"],  # eval()
+            ["line", "<module> in <string>"],  # 1+2)
+            ["line", "test_basic_start_stop in test_start_stop.py"],  # foo()
+            ["call", "test_basic_start_stop in test_start_stop.py"],  # foo()
+            ["line", "foo in test_start_stop.py"],  # foo: ... print()
+            ["call", "foo in test_start_stop.py"],  # print()
+            ["line", "test_basic_start_stop in test_start_stop.py"],  # stop()
+        ],
+    )
 
-#     # for entry in trace_lines:
-#     # print entry.event, entry.filename, entry.lineno, entry.name
+    # Do a start after we've done the stop.
+    # All setup was in place.
 
-#     assert len(trace_lines) >= 5, "Should have captured some trace output"
-#     for i, right in [
-#         (
-#             -1,
-#             (
-#                 "return",
-#                 "squares",
-#             ),
-#         ),
-#         (
-#             -2,
-#             (
-#                 "line",
-#                 "squares",
-#             ),
-#         ),
-#     ]:
-#         assert right == (trace_lines[i].event, trace_lines[i].name)
-#     return
+    start(hook_name)
+    trace_lines = []
+    bar()
+    stop(hook_name)
+
+    assert_check_lines(
+        trace_lines,
+        [
+            ["line", "test_basic_start_stop in test_start_stop.py"],  # trace_lines = []
+            ["call", "test_basic_start_stop in test_start_stop.py"],  # bar()
+            ["line", "bar in test_start_stop.py"],
+            ["call", "bar in test_start_stop.py"],
+            ["line", "foo in test_start_stop.py"],
+            ["call", "foo in test_start_stop.py"],
+            ["line", "bar in test_start_stop.py"],
+            ["call", "bar in test_start_stop.py"],
+            ["line", "foo in test_start_stop.py"],
+            ["call", "foo in test_start_stop.py"],
+            ["line", "test_basic_start_stop in test_start_stop.py"],
+        ],
+    )
 
 
 # def test_trace_filtering():
