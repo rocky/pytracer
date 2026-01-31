@@ -36,7 +36,7 @@ import inspect
 import sys
 
 from types import CodeType
-from typing import Any, Callable, Dict, Optional, Set
+from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 E = sys.monitoring.events
 
@@ -92,10 +92,12 @@ EVENT2SHORT = {
 
 ALL_EVENTS = frozenset(ALL_EVENT_NAMES)
 
+
 class FixedList:
     """
     A class fixed-length list.
     """
+
     def __init__(self, initial_value: Optional[Any], size: int):
         self._data = [initial_value] * size
 
@@ -151,9 +153,11 @@ class PytraceException(Exception):
     def __str__(self):
         return self.messr
 
+
 def check_tool_id(tool_id: int):
     if tool_id not in TOOL_ID_RANGE:
         raise PytraceException(f"tool id {tool_id} is not in {range(MAX_TOOL_IDS)}")
+
 
 def null_trace_hook(*args, **kwargs):
     """A trace hook that doesn't do anything. Can use this to "turn off"
@@ -182,14 +186,21 @@ def find_hook_by_id(tool_id: int) -> Optional[str]:
 
 
 def add_trace_callbacks(
-    tool_name: str, trace_callbacks: Dict[int, CodeType], options=None
-) -> Optional[int]:
+    tool_name: str,
+    trace_callbacks: Dict[int, CodeType],
+    events_mask: Optional[int] = None,
+    is_global: bool=True,
+    code: Optional[CodeType] = None
+) -> Optional[Tuple[int, int]]:
     """For each event and callback function in `trace_callbacks`,
     register that event under `tool_name`.
 
     A check is made on each trace function trace_callbacks to make
     sure it is a function.
     """
+
+    if events_mask is None:
+        events_mask = 0xFFFF
 
     if (tool_id := find_hook_by_name(tool_name)) is None:
         for i, tool_name_entry in enumerate(TOOL_NAME):
@@ -198,7 +209,7 @@ def add_trace_callbacks(
                 break
         else:
             print(f"all {MAX_TOOL_IDS} hooks are in use")
-            return None
+            return None, None
 
         # FIXME check for TOOL_NAME all full.
         TOOL_NAME[tool_id] = tool_name
@@ -207,16 +218,36 @@ def add_trace_callbacks(
         else:
             if trace_callbacks is not None and old_tool != tool_name:
                 print("Not adding a trace_callback where it already appeared")
-                return None
+                return None, None
             pass
 
     else:
         if not sys.monitoring.get_tool(tool_id):
             sys.monitoring.use_tool_id(tool_id, tool_name)
 
+    new_events_mask = 0
+    for event_id, trace_callback_func in trace_callbacks.items():
+        if not (event_id & events_mask):
+            continue
+        # Parameter checking:
+        if not (
+            inspect.ismethod(trace_callback_func)
+            or inspect.isfunction(trace_callback_func)
+        ):
+            print("trace_func should be something isfunction() or ismethod() blesses")
+
+        new_events_mask |= event_id
+        old_callback = sys.monitoring.register_callback(
+            tool_id, event_id, trace_callback_func
+        )
+        if old_callback is not None and old_callback != trace_callback_func:
+            print(
+                f"Warning smashed old_callback {old_callback} in tool_id {tool_id}, event id {event_id}"
+            )
+
     HOOKS[tool_id] = trace_callbacks
-    register_events(tool_id, trace_callbacks)
-    return tool_id
+    register_events(tool_id, new_events_mask, is_global, code)
+    return tool_id, new_events_mask
 
 
 def size() -> int:
@@ -224,11 +255,12 @@ def size() -> int:
     our mechanism. This is an integer in TOOL_ID_RANGE."""
     return sum(1 for item in TOOL_NAME if item is not None)
 
+
 # FIXME allow either a name or id
 def is_started(tool_id: int) -> bool:
     """Returns _True_ if monitoring has been started for `hook_id`."""
     check_tool_id(tool_id)
-    HOOKS[tool_id] is not None
+    return HOOKS[tool_id] is not None
 
 
 def free_tool_id(tool_id):
@@ -240,7 +272,9 @@ def free_tool_id(tool_id):
     registered_tool_name = sys.monitoring.get_tool(tool_id)
     if registered_tool_name is not None:
         if registered_tool_name != TOOL_NAME[tool_id]:
-            raise PytraceException(f"tool name {tool_id} is registered under name {registered_tool_name} not {TOOL_NAME[tool_id]}")
+            raise PytraceException(
+                f"tool name {tool_id} is registered under name {registered_tool_name} not {TOOL_NAME[tool_id]}"
+            )
 
         sys.monitoring.free_tool_id(tool_id)
 
@@ -248,29 +282,25 @@ def free_tool_id(tool_id):
     TOOL_NAME[tool_id] = None
     return
 
-# FIXME add optional event mask
-def register_events(tool_id: int, trace_callbacks: Dict[int, Callable]) -> int:
-    check_tool_id(tool_id)
-    events = 0
-    sys.monitoring.set_events(tool_id, events)
-    for event_id, trace_callback_func in trace_callbacks.items():
-        # Parameter checking:
-        if not (
-            inspect.ismethod(trace_callback_func)
-            or inspect.isfunction(trace_callback_func)
-        ):
-            print("trace_func should be something isfunction() or ismethod() blesses")
 
-        events |= event_id
-        old_callback = sys.monitoring.register_callback(
-            tool_id, event_id, trace_callback_func
+# FIXME add optional event mask
+def register_events(
+    tool_id: int,
+    events_mask: int,
+    is_global: bool = True,
+    code: Optional[CodeType] = None,
+):
+    check_tool_id(tool_id)
+
+    set_events_fn = (
+        sys.monitoring.set_events
+        if is_global
+        else lambda tool_id, events: sys.monitoring.set_local_events(
+            tool_id, code, events
         )
-        if old_callback is not None and old_callback != trace_callback_func:
-            print(
-                f"Warning smashed old_callback {old_callback} in tool_id {tool_id}, event id {event_id}"
-            )
-    sys.monitoring.set_events(tool_id, events)
-    return events
+    )
+
+    set_events_fn(tool_id, events_mask)
 
 
 def register_tool_by_name(
@@ -354,22 +384,24 @@ def start(
     tool_name: str,
     trace_callbacks: Optional[Dict[int, CodeType]] = None,
     tool_id: Optional[int] = None,
-    events_set: Optional[Set[str]] = None
-) -> Optional[int]:
-    """Start using any previously-registered trace hooks. If
-    `options[trace_func]_ is not None, we'll search for that and add it, if it's
+    events_set: Optional[Set[str]] = None,
+    is_global: bool = True,
+) -> Tuple[int, int]:
+    """
+    Start using any previously-registered trace hooks. If
+    options[trace_func] is not None, we will search for that and add it, if it's
     not already added.
     """
 
     if trace_callbacks is None:
         tool_id = register_tool_by_name(tool_name, tool_id)
-        if HOOKS[tool_id]:
-            # This is not the first start. So set
-            # sys.monitoring to track these events that
-            # we have callbacks for.
-            register_events(tool_id, HOOKS[tool_id])
-        return tool_id
-    return add_trace_callbacks(tool_name, trace_callbacks)
+        trace_callbacks = HOOKS[tool_id]
+        if trace_callbacks is None:
+            return tool_id, None
+        pass
+    return tool_id, add_trace_callbacks(
+        tool_name, trace_callbacks, events_set, is_global
+    )
 
 
 # Think about: we could return the uncleared event names in addition to the
@@ -405,27 +437,23 @@ def stop(
     the same thing). Otherwise the free_tool_id parameter is ingored.
 
     """
-
     if (tool_id := find_hook_by_name(tool_name)) is None:
         return None
 
     if events_set is None:
-        events_set = ALL_EVENT_NAMES
+        sys.monitoring.set_events(tool_id, 0)
+        return 0
 
     # We have a tool id
     trace_callbacks = HOOKS[tool_id]
 
-    # Build up a new list of events from
-    # scratch. We set the new event mask if
-    # it was *already* in trace_callback_func and it
-    # was *not* noted to be removed from events_set.
-    new_event_mask = 0
+    new_event_mask = sys.monitoring.get_events(tool_id)
 
     for event_id, trace_callback_func in trace_callbacks.items():
-        if event2string.get(event_id) not in events_set:
-            new_event_mask |= event_id
+        if event2string.get(event_id) in events_set:
+            new_event_mask = new_event_mask & ~event_id
 
-    # print(f"events to clear {new_event_mask}")  # debug
+    print(f"events to clear {new_event_mask}")  # debug
     sys.monitoring.set_events(tool_id, new_event_mask)
     return new_event_mask
 
@@ -437,13 +465,14 @@ if __name__ == "__main__":
     t.sort()
     print("EVENT2SHORT.keys() == ALL_EVENT_NAMES: %s" % (tuple(t) == ALL_EVENT_NAMES))
     trace_count = 100000
-    hook_name = "pytrace-test"
+    hook_name = "tracer.sys_monitoring"
 
     import importlib
     import tracefilter
 
     ignore_filter = tracefilter.TraceFilter(
         [
+            FixedList.index,
             add_trace_callbacks,
             check_tool_id,
             find_hook_by_name,
@@ -511,8 +540,8 @@ if __name__ == "__main__":
         foo("bar")
 
     print(f"** Monitoring started before start(): {is_started(1)}")
-    tool_id = start(hook_name, tool_id=1)
-    print(f"tool_id is {tool_id}")
+    tool_id, events_mask = start(hook_name, tool_id=1)
+    print(f"tool_id is {tool_id}, events_mask: {events_mask}")
 
     callback_hooks = {
         E.CALL: call_event_callback,
@@ -532,12 +561,12 @@ if __name__ == "__main__":
     for i in range(6):
         print(i)
     trace_count = 25
-    free_tool_id(tool_id)
     print(f"** Monitoring started: {is_started(tool_id)}")
+    stop(tool_id)
 
     # After adding event parameter to start()
     # print("** Monitoring only 'call' now...")
-    tool_id = start(tool_name=hook_name, trace_callbacks=callback_hooks)
+    tool_id, events_mask = start(tool_name=hook_name, trace_callbacks=callback_hooks)
+    print(f"tool_id {tool_id}, events_mask: {events_mask}")
     foo()
     bar()
-    stop(tool_id)

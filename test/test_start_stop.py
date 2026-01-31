@@ -1,5 +1,7 @@
 """Unit tests for Tracer.trace"""
 
+# codecs is imported because codecs.reset it is weirldy getting line traced into.
+import codecs
 import os
 import sys
 from types import CodeType
@@ -21,7 +23,7 @@ E = sys.monitoring.events
 # One implication is that we can't run tests in parallel.
 
 trace_lines = []
-ignore_filter = tracefilter.TraceFilter([tracer.tracefilter, tracer.sys_monitoring])
+ignore_filter = tracefilter.TraceFilter([tracer.tracefilter, tracer.sys_monitoring, codecs.IncrementalDecoder.reset])
 
 
 class Entry(NamedTuple):
@@ -30,12 +32,13 @@ class Entry(NamedTuple):
     arg: Any
 
 
-def assert_check_lines(got: list, expected: List[List[str, str]]):
+def assert_check_lines(tag: str, got: list, expected: List[List[str, str]]):
     if os.environ.get("DEBUG"):
         from pprint import pp
 
         pp(got)
 
+    print(f"test {tag}")
     got_length = len(got)
     for i, expected_entry in enumerate(expected):
         if i < got_length:
@@ -45,12 +48,12 @@ def assert_check_lines(got: list, expected: List[List[str, str]]):
                 print(f"Trace line: {got_entry}")
             assert (
                 expected_entry == got_check
-            ), f"Mismatch at {i}. Expected {expected_entry}; got {got_check}"
+            ), f"Mismatch at at {i}. Expected {expected_entry}; got {got_check}"
         else:
             assert False, f"Extra entries expected at {i}\n: expected_entry"
     expected_length = len(expected)
     if got_length > expected_length:
-        print(f"Extra entry strating at\n: {got[expected_length]}")
+        print(f"Extra entry starting at {got_length}:\n {got[expected_length]}")
 
     assert (
         got_length == expected_length
@@ -66,6 +69,10 @@ def code_short(code: CodeType) -> str:
 
 def line_event_callback(code, line_number):
     """A line event callback trace function"""
+
+    # FIXME: why are we tracing into codecs.IncrementalDecoder.reset?
+    if  str(code).find("reset") > 0:
+        return
 
     if ignore_filter.is_excluded(code):
         return sys.monitoring.DISABLE
@@ -122,6 +129,7 @@ def test_basic_start_stop():
     foo()
     stop(hook_name)
     assert_check_lines(
+        "test 1",
         trace_lines,
         [
             ["line", "test_basic_start_stop in test_start_stop.py"],  # eval("1+2")
@@ -138,25 +146,28 @@ def test_basic_start_stop():
     # Do a start after we've done the stop.
     # All setup was in place.
 
-    start(hook_name)
     trace_lines = []
+    start(hook_name)
     bar()
     stop(hook_name)
+    # from pprint import pp
+    # pp(trace_lines)
 
     assert_check_lines(
+        "test 2",
         trace_lines,
         [
-            ["line", "test_basic_start_stop in test_start_stop.py"],  # trace_lines = []
-            ["call", "test_basic_start_stop in test_start_stop.py"],  # bar()
-            ["line", "bar in test_start_stop.py"],
-            ["call", "bar in test_start_stop.py"],
-            ["line", "foo in test_start_stop.py"],
-            ["call", "foo in test_start_stop.py"],
-            ["line", "bar in test_start_stop.py"],
-            ["call", "bar in test_start_stop.py"],
-            ["line", "foo in test_start_stop.py"],
-            ["call", "foo in test_start_stop.py"],
-            ["line", "test_basic_start_stop in test_start_stop.py"],
+            ["line", "test_basic_start_stop in test_start_stop.py"],  # module: bar()
+            ["call", "test_basic_start_stop in test_start_stop.py"],  # module: bar()
+            ["line", "bar in test_start_stop.py"], # foo("foo")
+            ["call", "bar in test_start_stop.py"], # foo()
+            ["line", "foo in test_start_stop.py"], # print(f"test function ... "))
+            ["call", "foo in test_start_stop.py"], # print(...)
+            ["line", "bar in test_start_stop.py"], # foo("bar")
+            ["call", "bar in test_start_stop.py"], # foo("bar")
+            ["line", "foo in test_start_stop.py"], # print(f"test_function...")
+            ["call", "foo in test_start_stop.py"], # print()
+            ["line", "test_basic_start_stop in test_start_stop.py"] # stop(),
         ],
     )
 
