@@ -386,6 +386,7 @@ def start(
     tool_id: Optional[int] = None,
     events_set: Optional[Set[str]] = None,
     is_global: bool = True,
+    code: Optional[CodeType] = None,
 ) -> Tuple[int, int]:
     """
     Start using any previously-registered trace hooks. If
@@ -400,9 +401,24 @@ def start(
             return tool_id, None
         pass
     return tool_id, add_trace_callbacks(
-        tool_name, trace_callbacks, events_set, is_global
+        tool_name, trace_callbacks, events_set, is_global, code
     )
 
+def start_local(
+    tool_name: str,
+    trace_callbacks: Optional[Dict[int, CodeType]] = None,
+    tool_id: Optional[int] = None,
+    events_set: Optional[Set[str]] = None,
+    code: Optional[CodeType] = None,
+) -> Tuple[int, int]:
+    """
+    Start using any previously-registered trace hooks. If
+    options[trace_func] is not None, we will search for that and add it, if it's
+    not already added.
+    """
+    if code is None:
+        code = sys._getframe(1).f_code
+    return start(tool_name, trace_callbacks, events_set, is_global=False, code=code)
 
 # Think about: we could return the uncleared event names in addition to the
 # event set. And/or a the list found and cleared.
@@ -555,7 +571,7 @@ if __name__ == "__main__":
     stop(hook_name)
     print(f"** Monitoring state after stopped: {is_started(tool_id)}")
     y = 5
-    start(hook_name)
+    tool_id, events_mask = start_local(hook_name)
     bar()
     z = 5
     for i in range(6):
