@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     import tracefilter
     import sys_monitoring
-    from sys_monitoring import start, start_local, stop
+    from sys_monitoring import mstart, start_local, mstop
 
     hook_name = "tracer.stepping"
 
@@ -130,7 +130,7 @@ if __name__ == "__main__":
         foo("foo")
         foo("bar")
 
-    tool_id, events_mask = start(hook_name, tool_id=1)
+    tool_id, events_mask = mstart(hook_name, tool_id=1)
     print(f"tool_id is {tool_id}, events_mask is {events_mask}")
 
     callback_hooks = {
@@ -147,9 +147,9 @@ if __name__ == "__main__":
     start_local(hook_name, callback_hooks, STEP_INTO_EVENTS, code=bar.__code__)
     bar()
 
-    stop(hook_name)
+    mstop(hook_name)
     print("=" * 40)
-    start(hook_name)
+    mstart(hook_name)
     bar()
-    stop(hook_name)
+    mstop(hook_name)
     print("=" * 40)

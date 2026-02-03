@@ -13,8 +13,8 @@ from tracer.sys_monitoring import (
     add_trace_callbacks,
     TOOL_ID_RANGE,
     free_tool_id,
-    start,
-    stop,
+    mstart,
+    mstop,
 )
 
 E = sys.monitoring.events
@@ -106,7 +106,7 @@ def setup_function():
     return
 
 
-def test_basic_start_stop():
+def test_basic_mstart_mstop():
     """Test that trace hook is triggering event callbacks without filtering."""
 
     callback_hooks = {
@@ -122,34 +122,34 @@ def test_basic_start_stop():
         foo("bar")
 
     global trace_lines
-    hook_name = "trace_basic_start_stop"
+    hook_name = "trace_basic_mstart_mstop"
     print("\n")
     add_trace_callbacks(hook_name, callback_hooks)
     eval("1+2")
     foo()
-    stop(hook_name)
+    mstop(hook_name)
     assert_check_lines(
         "test 1",
         trace_lines,
         [
-            ["line", "test_basic_start_stop in test_start_stop.py"],  # eval("1+2")
-            ["call", "test_basic_start_stop in test_start_stop.py"],  # eval()
+            ["line", "test_basic_mstart_mstop in test_start_stop.py"],  # eval("1+2")
+            ["call", "test_basic_mstart_mstop in test_start_stop.py"],  # eval()
             ["line", "<module> in <string>"],  # 1+2)
-            ["line", "test_basic_start_stop in test_start_stop.py"],  # foo()
-            ["call", "test_basic_start_stop in test_start_stop.py"],  # foo()
+            ["line", "test_basic_mstart_mstop in test_start_stop.py"],  # foo()
+            ["call", "test_basic_mstart_mstop in test_start_stop.py"],  # foo()
             ["line", "foo in test_start_stop.py"],  # foo: ... print()
             ["call", "foo in test_start_stop.py"],  # print()
-            ["line", "test_basic_start_stop in test_start_stop.py"],  # stop()
+            ["line", "test_basic_mstart_mstop in test_start_stop.py"],  # mstop()
         ],
     )
 
-    # Do a start after we've done the stop.
+    # Do a mstart after we've done the mstop.
     # All setup was in place.
 
     trace_lines = []
-    start(hook_name)
+    mstart(hook_name)
     bar()
-    stop(hook_name)
+    mstop(hook_name)
     # from pprint import pp
     # pp(trace_lines)
 
@@ -157,8 +157,8 @@ def test_basic_start_stop():
         "test 2",
         trace_lines,
         [
-            ["line", "test_basic_start_stop in test_start_stop.py"],  # module: bar()
-            ["call", "test_basic_start_stop in test_start_stop.py"],  # module: bar()
+            ["line", "test_basic_mstart_mstop in test_start_stop.py"],  # module: bar()
+            ["call", "test_basic_mstart_mstop in test_start_stop.py"],  # module: bar()
             ["line", "bar in test_start_stop.py"], # foo("foo")
             ["call", "bar in test_start_stop.py"], # foo()
             ["line", "foo in test_start_stop.py"], # print(f"test function ... "))
@@ -167,7 +167,7 @@ def test_basic_start_stop():
             ["call", "bar in test_start_stop.py"], # foo("bar")
             ["line", "foo in test_start_stop.py"], # print(f"test_function...")
             ["call", "foo in test_start_stop.py"], # print()
-            ["line", "test_basic_start_stop in test_start_stop.py"] # stop(),
+            ["line", "test_basic_mstart_mstop in test_start_stop.py"] # mstop(),
         ],
     )
 
@@ -181,10 +181,10 @@ def test_basic_start_stop():
 #     ignore_filter = tracefilter.TraceFilter()
 
 #     tracefilter.TraceFilter()
-#     tracer.clear_hooks_and_stop()
+#     tracer.clear_hooks_and_mstop()
 #     assert (
 #         tracer.add_hook(
-#             my_trace_dispatch, {"start": True, "event_set": frozenset(("call",))}
+#             my_trace_dispatch, {"mstart": True, "event_set": frozenset(("call",))}
 #         )
 #         == 1
 #     )
@@ -193,7 +193,7 @@ def test_basic_start_stop():
 #         return
 
 #     foo()
-#     tracer.stop()
+#     tracer.mstop()
 
 #     #  for entry in trace_lines:
 #     #    print entry.event, entry.filename, entry.lineno, entry.name
@@ -203,7 +203,7 @@ def test_basic_start_stop():
 #             -1,
 #             (
 #                 "call",
-#                 "stop",
+#                 "mstop",
 #             ),
 #         ),
 #         (

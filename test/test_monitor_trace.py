@@ -21,10 +21,10 @@ from tracer.sys_monitoring import (
 
 def setup_function():
     for tool_id in TOOL_ID_RANGE:
-        if tracer.size() == 0:
+        if tracer.msize() == 0:
             break
         free_tool_id(tool_id)
-    assert tracer.size() == 0
+    assert tracer.msize() == 0
     return
 
 
@@ -51,13 +51,13 @@ def test_find_hook_fns_size():
     assert find_hook_by_name("test_find_hook_fns2") == tool_id2
 
 
-def test_register_tool_by_name_and_size():
+def test_register_tool_by_name_and_msize():
     for tool_id in TOOL_ID_RANGE:
         tool_name = f"pytest_register_too_by_name_{tool_id}"
         register_tool_by_name(tool_name, can_change_tool_id=False)
         assert (
-            tracer.size() == tool_id + 1
-        ), f"size() should note {tool_id + 1} tool(s) registered"
+            tracer.msize() == tool_id + 1
+        ), f"msize() should note {tool_id + 1} tool(s) registered"
 
     # We now have a full list of HOOKS.
 
@@ -81,7 +81,7 @@ def test_register_tool_by_name_and_size():
         register_tool_by_name(tool_name, tool_id=4, can_change_tool_id=False)
 
     # We should still have a full list of HOOKS
-    assert tracer.size() == MAX_TOOL_IDS
+    assert tracer.msize() == MAX_TOOL_IDS
     return
 
 
@@ -91,7 +91,7 @@ def test_free_tool_id():
         free_tool_id(20)
     for tool_id in TOOL_ID_RANGE:
         assert tracer.sys_monitoring.TOOL_NAME[tool_id] is None
-        assert tracer.sys_monitoring.HOOKS[tool_id] is None
+        assert tracer.sys_monitoring.MONITOR_HOOKS[tool_id] is None
         if (sys.monitoring.get_tool(tool_id)) is not None:
             with pytest.raises(PytraceException):
                 free_tool_id(tool_id)

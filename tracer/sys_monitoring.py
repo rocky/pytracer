@@ -122,7 +122,7 @@ class FixedList:
 
 
 # A list of the registered hooks keyed by sys.monitoring.events.
-HOOKS = FixedList(None, MAX_TOOL_IDS)
+MONITOR_HOOKS = FixedList(None, MAX_TOOL_IDS)
 
 # A list of tool names
 TOOL_NAME = FixedList(None, MAX_TOOL_IDS)
@@ -245,22 +245,16 @@ def add_trace_callbacks(
                 f"Warning smashed old_callback {old_callback} in tool_id {tool_id}, event id {event_id}"
             )
 
-    HOOKS[tool_id] = trace_callbacks
+    MONITOR_HOOKS[tool_id] = trace_callbacks
     register_events(tool_id, new_events_mask, is_global, code)
     return tool_id, new_events_mask
-
-
-def size() -> int:
-    """Returns a count of the number of trace monitoring hooks installed through
-    our mechanism. This is an integer in TOOL_ID_RANGE."""
-    return sum(1 for item in TOOL_NAME if item is not None)
 
 
 # FIXME allow either a name or id
 def is_started(tool_id: int) -> bool:
     """Returns _True_ if monitoring has been started for `hook_id`."""
     check_tool_id(tool_id)
-    return HOOKS[tool_id] is not None
+    return MONITOR_HOOKS[tool_id] is not None
 
 
 def free_tool_id(tool_id):
@@ -278,9 +272,93 @@ def free_tool_id(tool_id):
 
         sys.monitoring.free_tool_id(tool_id)
 
-    HOOKS[tool_id] = None
+    MONITOR_HOOKS[tool_id] = None
     TOOL_NAME[tool_id] = None
     return
+
+
+def msize() -> int:
+    """Returns a count of the number of trace monitoring hooks installed through
+    our mechanism. This is an integer in TOOL_ID_RANGE."""
+    return sum(1 for item in TOOL_NAME if item is not None)
+
+
+def mstart(
+    tool_name: str,
+    trace_callbacks: Optional[Dict[int, CodeType]] = None,
+    tool_id: Optional[int] = None,
+    events_set: Optional[Set[str]] = None,
+    is_global: bool = True,
+    code: Optional[CodeType] = None,
+) -> Tuple[int, int]:
+    """
+    Start using any previously-registered trace hooks. If
+    options[trace_func] is not None, we will search for that and add it, if it's
+    not already added.
+    """
+
+    if trace_callbacks is None:
+        tool_id = register_tool_by_name(tool_name, tool_id)
+        trace_callbacks = MONITOR_HOOKS[tool_id]
+        if trace_callbacks is None:
+            return tool_id, None
+        pass
+    return tool_id, add_trace_callbacks(
+        tool_name, trace_callbacks, events_set, is_global, code
+    )
+
+# Think about: we could return the uncleared event names in addition to the
+# event set. And/or a the list found and cleared.
+def mstop(
+    tool_name: str, events_set: Optional[Set[str]] = None, free_tool_id: bool = False
+) -> Optional[int]:
+    """Stop or unregister callback hooks in `tool_name` for events
+    `events`. If events is None, then all events found under tool_name
+    are removed. And if the event wasn't set previously, it is tacitly
+    ignored.
+
+    Note, the event set is given as a set of strings, not an encoded
+    event bitmask.  The strings used are not checked for validity, so
+    when an event name is and invalid name, that has no effect, and
+    no warning is given.
+
+    The new event mask in effect is returned encoded as a bitmask. If
+    None is returned, then tool_name was not found.
+
+    If free_tool_id is False, MONITOR_HOOKS[tool_id] will still hold the
+    dictionary of callback functions which can be enabled again later without
+    needed to specify this dictoinary.
+
+    Set free_tool_id to True, when clearing all events, and when you
+    will no longer need any tracing, or will do tool setup should you
+    need trace at a later point. This allows execution to continue at
+    full speed, and clears and frees tool_id which allows another
+    monitor to use the tool id number.
+
+    When free_tool_id is True, the event_set should be cover the entire
+    events set registered; or "events_set" should be None (which means
+    the same thing). Otherwise the free_tool_id parameter is ingored.
+
+    """
+    if (tool_id := find_hook_by_name(tool_name)) is None:
+        return None
+
+    if events_set is None:
+        sys.monitoring.set_events(tool_id, 0)
+        return 0
+
+    # We have a tool id
+    trace_callbacks = MONITOR_HOOKS[tool_id]
+
+    new_event_mask = sys.monitoring.get_events(tool_id)
+
+    for event_id, trace_callback_func in trace_callbacks.items():
+        if event2string.get(event_id) in events_set:
+            new_event_mask = new_event_mask & ~event_id
+
+    print(f"events to clear {new_event_mask}")  # debug
+    sys.monitoring.set_events(tool_id, new_event_mask)
+    return new_event_mask
 
 
 # FIXME add optional event mask
@@ -380,30 +458,6 @@ def register_tool_by_name(
     return tool_id
 
 
-def start(
-    tool_name: str,
-    trace_callbacks: Optional[Dict[int, CodeType]] = None,
-    tool_id: Optional[int] = None,
-    events_set: Optional[Set[str]] = None,
-    is_global: bool = True,
-    code: Optional[CodeType] = None,
-) -> Tuple[int, int]:
-    """
-    Start using any previously-registered trace hooks. If
-    options[trace_func] is not None, we will search for that and add it, if it's
-    not already added.
-    """
-
-    if trace_callbacks is None:
-        tool_id = register_tool_by_name(tool_name, tool_id)
-        trace_callbacks = HOOKS[tool_id]
-        if trace_callbacks is None:
-            return tool_id, None
-        pass
-    return tool_id, add_trace_callbacks(
-        tool_name, trace_callbacks, events_set, is_global, code
-    )
-
 def start_local(
     tool_name: str,
     trace_callbacks: Optional[Dict[int, CodeType]] = None,
@@ -418,61 +472,7 @@ def start_local(
     """
     if code is None:
         code = sys._getframe(1).f_code
-    return start(tool_name, trace_callbacks, events_set, is_global=False, code=code)
-
-# Think about: we could return the uncleared event names in addition to the
-# event set. And/or a the list found and cleared.
-def stop(
-    tool_name: str, events_set: Optional[Set[str]] = None, free_tool_id: bool = False
-) -> Optional[int]:
-    """Stop or unregister callback hooks in `tool_name` for events
-    `events`. If events is None, then all events found under tool_name
-    are removed. And if the event wasn't set previously, it is tacitly
-    ignored.
-
-    Note, the event set is given as a set of strings, not an encoded
-    event bitmask.  The strings used are not checked for validity, so
-    when an event name is and invalid name, that has no effect, and
-    no warning is given.
-
-    The new event mask in effect is returned encoded as a bitmask. If
-    None is returned, then tool_name was not found.
-
-    If free_tool_id is False, HOOKS[tool_id] will still hold the
-    dictionary of callback functions which can be enabled again later without
-    needed to specify this dictoinary.
-
-    Set free_tool_id to True, when clearing all events, and when you
-    will no longer need any tracing, or will do tool setup should you
-    need trace at a later point. This allows execution to continue at
-    full speed, and clears and frees tool_id which allows another
-    monitor to use the tool id number.
-
-    When free_tool_id is True, the event_set should be cover the entire
-    events set registered; or "events_set" should be None (which means
-    the same thing). Otherwise the free_tool_id parameter is ingored.
-
-    """
-    if (tool_id := find_hook_by_name(tool_name)) is None:
-        return None
-
-    if events_set is None:
-        sys.monitoring.set_events(tool_id, 0)
-        return 0
-
-    # We have a tool id
-    trace_callbacks = HOOKS[tool_id]
-
-    new_event_mask = sys.monitoring.get_events(tool_id)
-
-    for event_id, trace_callback_func in trace_callbacks.items():
-        if event2string.get(event_id) in events_set:
-            new_event_mask = new_event_mask & ~event_id
-
-    print(f"events to clear {new_event_mask}")  # debug
-    sys.monitoring.set_events(tool_id, new_event_mask)
-    return new_event_mask
-
+    return mstart(tool_name, trace_callbacks, events_set, is_global=False, code=code)
 
 # Demo it
 if __name__ == "__main__":
@@ -496,8 +496,8 @@ if __name__ == "__main__":
             is_started,
             register_events,
             free_tool_id,
-            start,
-            stop,
+            mstart,
+            mstop,
             sys.monitoring.set_events,
         ]
     )
@@ -520,7 +520,7 @@ if __name__ == "__main__":
             trace_count -= 1
         else:
             print("Max line trace count reached - turning off monitoring")
-            stop(hook_name, E.LINE)
+            mstop(hook_name, E.LINE)
             return sys.monitoring.DISABLE
         return sys.monitoring.DISABLE
 
@@ -556,7 +556,7 @@ if __name__ == "__main__":
         foo("bar")
 
     print(f"** Monitoring started before start(): {is_started(1)}")
-    tool_id, events_mask = start(hook_name, tool_id=1)
+    tool_id, events_mask = mstart(hook_name, tool_id=1)
     print(f"tool_id is {tool_id}, events_mask: {events_mask}")
 
     callback_hooks = {
@@ -568,7 +568,7 @@ if __name__ == "__main__":
     eval("1+2")
     foo()
 
-    stop(hook_name)
+    mstop(hook_name)
     print(f"** Monitoring state after stopped: {is_started(tool_id)}")
     y = 5
     tool_id, events_mask = start_local(hook_name)
@@ -578,11 +578,11 @@ if __name__ == "__main__":
         print(i)
     trace_count = 25
     print(f"** Monitoring started: {is_started(tool_id)}")
-    stop(tool_id)
+    mstop(tool_id)
 
     # After adding event parameter to start()
     # print("** Monitoring only 'call' now...")
-    tool_id, events_mask = start(tool_name=hook_name, trace_callbacks=callback_hooks)
+    tool_id, events_mask = mstart(tool_name=hook_name, trace_callbacks=callback_hooks)
     print(f"tool_id {tool_id}, events_mask: {events_mask}")
     foo()
     bar()
