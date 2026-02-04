@@ -3,9 +3,10 @@ Debugger-like "step into", "step over" and "finish" support.
 """
 
 import sys
-from collections import namedtuple
-from types import CodeType
-from typing import Dict, Tuple
+from dataclasses import dataclass
+from enum import Enum
+from types import CodeType, FrameType
+from typing import Dict, List, Tuple, Union
 
 E = sys.monitoring.events
 
@@ -23,14 +24,55 @@ LOCAL_EVENTS = (
     | E.STOP_ITERATION
 )
 
-# For a given code object and thread id and tool_id, have a place to store
-# event masks that dictate what events we should be stopping on.
-# The "status" field specifies on entry to a callback function, what
-# level of callback is desired. This can be step, into, step over, or finish.
-CodeMasks = namedtuple("CodeMasks", "local_events_mask global_events_mask status breakpoints")
 
-# thread_id, tool_id, code
-CODE2EVENTS: Dict[Tuple[int, int, CodeType], CodeMasks] = {}
+class BreakpointTag(Enum):
+    LINE_NUMBER = "line-number"
+    LINE_NUMBER_OFFSET = "line-number-and-offset"
+    CODE_OFFSET = "offset"
+
+@dataclass
+class LineNumberValue:
+    tag: BreakpointTag = BreakpointTag.LINE_NUMBER
+    line_number: int = -1
+
+@dataclass
+class LineNumberOffsetValue:
+    tag: BreakpointTag = BreakpointTag.LINE_NUMBER_OFFSET
+    line_number: int = -1
+    code_offset: int = -1
+
+@dataclass
+class CodeOffsetValue:
+    tag: BreakpointTag = BreakpointTag.CODE_OFFSET
+    code_offset: int = -1
+
+# The "Union" structure
+Location = Union[LineNumberValue, LineNumberOffsetValue, CodeOffsetValue]
+
+# Maps thread_id, tool_id, code
+CODE_TRACKING: Dict[Tuple[int, int, CodeType], List[Location]] = {}
+
+@dataclass
+class FrameTracking:
+    """
+    Information about the current frame with regards to monitoring.
+    We use this to support "step in", "step over" and "step out".
+    """
+    # event_mask is gets set into this mask for this frame.  The
+    # caller should factor in whether there are breakpoints in the
+    # code.  If there are breakpoints, events will change depending on
+    # whether the breakpoint location is on a line, or an instruction.
+    # Also, frame status figure into the local mask: whether we are
+    # stepping, in, over, or out.
+    local_event_mask: int
+
+    # status: "in", "over" or, "out"
+    status: str
+
+    # Should we include breakpoints and test here?
+
+
+FRAME_TRACKING: Dict[FrameType, FrameTracking] = {}
 
 # CODE2EVENTS: Dict[(int, int, CodeType), ]
 
