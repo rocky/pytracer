@@ -152,13 +152,27 @@ if __name__ == "__main__":
         )
         return
 
-    def return_yield_event_callback(
+    def call_event_handler_return(
+        code: CodeType, step_type
+    ) -> object:
+        """Returning from a call event handler"""
+        # Set local events based on step type and breakpoints.
+        return
+
+    def leave_event_callback(
         event: str, code: CodeType, instruction_offset: int, retval: object
     ):
         """A Return and Yield event callback trace function"""
         print(
             f"event: {event}, code: {code_short(code)}, offset: *{instruction_offset}\nreturn value: {retval}"
         )
+        return
+
+    def leave_event_handler_return(
+            code: CodeType, step_type
+    ):
+        """Returning from a return or yeild event handler"""
+        # Set local events based on step type and breakpoints.
         return
 
     def foo(*args):
@@ -178,10 +192,10 @@ if __name__ == "__main__":
     callback_hooks = {
         E.CALL: call_event_callback,
         E.LINE: line_event_callback,
-        E.PY_RETURN: lambda code, instruction_offset, retval: return_yield_event_callback(
+        E.PY_RETURN: lambda code, instruction_offset, retval: leave_event_callback(
             "return", code, instruction_offset, retval
         ),
-        E.PY_YIELD: lambda code, instruction_offset, retval: return_yield_event_callback(
+        E.PY_YIELD: lambda code, instruction_offset, retval: leave_event_callback(
             "yield", code, instruction_offset, retval
         ),
     }
