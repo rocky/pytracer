@@ -24,11 +24,20 @@ LOCAL_EVENTS = (
     | E.STOP_ITERATION
 )
 
+class StepType(Enum):
+    STEP_INTO = "step into"
+    STEP_OUT = "step out"
+    STEP_OVER = "step over"
+
+class StepGranularity(Enum):
+    INSTRUCTION = "instruction"
+    LINE_NUMBER = "line number"
+    # Is there stuff like "RESUME" or at "safe" points
 
 class BreakpointTag(Enum):
-    LINE_NUMBER = "line-number"
-    LINE_NUMBER_OFFSET = "line-number-and-offset"
-    CODE_OFFSET = "offset"
+    LINE_NUMBER = "line number"
+    LINE_NUMBER_OFFSET = "line number and offset"
+    CODE_OFFSET = "instruction offset"
 
 @dataclass
 class LineNumberValue:
@@ -139,6 +148,11 @@ if __name__ == "__main__":
             return sys.monitoring.DISABLE
 
         print(f"line event: code: {code_short(code)}, line: {line_number}")
+        return line_event_handler_return(code, StepType.STEP_INTO, StepGranularity.LINE_NUMBER)
+
+    def line_event_handler_return(code: CodeType, step_type: StepType, granularity: StepGranularity) -> object:
+        """A line event callback trace function"""
+        return
 
     def call_event_callback(
         code: CodeType, instruction_offset: int, callable_obj: CodeType, args
@@ -150,10 +164,11 @@ if __name__ == "__main__":
         print(
             f"call event: code: {code_short(code)}, offset: *{instruction_offset} call: {callable_obj}"
         )
+        return call_event_handler_return(code, StepType.STEP_INTO)
         return
 
     def call_event_handler_return(
-        code: CodeType, step_type
+        code: CodeType, step_type: StepType
     ) -> object:
         """Returning from a call event handler"""
         # Set local events based on step type and breakpoints.
@@ -166,11 +181,13 @@ if __name__ == "__main__":
         print(
             f"event: {event}, code: {code_short(code)}, offset: *{instruction_offset}\nreturn value: {retval}"
         )
-        return
+        return leave_event_handler_return(code, StepType.STEP_INTO, StepGranularity.LINE_NUMBER)
 
     def leave_event_handler_return(
-            code: CodeType, step_type
-    ):
+            code: CodeType, step_type: StepType,
+            granularity: StepGranularity.LINE_NUMBER
+
+    ) -> object:
         """Returning from a return or yeild event handler"""
         # Set local events based on step type and breakpoints.
         return
