@@ -24,25 +24,30 @@ LOCAL_EVENTS = (
     | E.STOP_ITERATION
 )
 
+
 class StepType(Enum):
     STEP_INTO = "step into"
     STEP_OUT = "step out"
     STEP_OVER = "step over"
+
 
 class StepGranularity(Enum):
     INSTRUCTION = "instruction"
     LINE_NUMBER = "line number"
     # Is there stuff like "RESUME" or at "safe" points
 
+
 class BreakpointTag(Enum):
     LINE_NUMBER = "line number"
     LINE_NUMBER_OFFSET = "line number and offset"
     CODE_OFFSET = "instruction offset"
 
+
 @dataclass
 class LineNumberValue:
     tag: BreakpointTag = BreakpointTag.LINE_NUMBER
     line_number: int = -1
+
 
 @dataclass
 class LineNumberOffsetValue:
@@ -50,10 +55,12 @@ class LineNumberOffsetValue:
     line_number: int = -1
     code_offset: int = -1
 
+
 @dataclass
 class CodeOffsetValue:
     tag: BreakpointTag = BreakpointTag.CODE_OFFSET
     code_offset: int = -1
+
 
 # The "Union" structure
 Location = Union[LineNumberValue, LineNumberOffsetValue, CodeOffsetValue]
@@ -61,12 +68,14 @@ Location = Union[LineNumberValue, LineNumberOffsetValue, CodeOffsetValue]
 # Maps thread_id, tool_id, code
 CODE_TRACKING: Dict[Tuple[int, int, CodeType], List[Location]] = {}
 
+
 @dataclass
 class FrameTracking:
     """
     Information about the current frame with regards to monitoring.
     We use this to support "step in", "step over" and "step out".
     """
+
     # event_mask is gets set into this mask for this frame.  The
     # caller should factor in whether there are breakpoints in the
     # code.  If there are breakpoints, events will change depending on
@@ -148,28 +157,38 @@ if __name__ == "__main__":
             return sys.monitoring.DISABLE
 
         print(f"line event: code: {code_short(code)}, line: {line_number}")
-        return line_event_handler_return(code, StepType.STEP_INTO, StepGranularity.LINE_NUMBER)
+        return line_event_handler_return(
+            code, StepType.STEP_INTO, StepGranularity.LINE_NUMBER
+        )
 
-    def line_event_handler_return(code: CodeType, step_type: StepType, granularity: StepGranularity) -> object:
+    def line_event_handler_return(
+        code: CodeType, step_type: StepType, granularity: StepGranularity
+    ) -> object:
         """A line event callback trace function"""
         return
 
     def call_event_callback(
-        code: CodeType, instruction_offset: int, callable_obj: CodeType, args
+        tool_id: int,
+        event: str,
+        code: CodeType,
+        instruction_offset: int,
+        callable_obj: CodeType,
+        args,
     ) -> object:
         """A call event callback trace function"""
         if ignore_filter.is_excluded(callable_obj) or ignore_filter.is_excluded(code):
             return sys.monitoring.DISABLE
 
         print(
-            f"call event: code: {code_short(code)}, offset: *{instruction_offset} call: {callable_obj}"
+            (
+                f"event {event}, tool id: {tool_id}, code:\n\t"
+                f"{code_short(code)}, offset: *{instruction_offset} call: {callable_obj}"
+            )
         )
         return call_event_handler_return(code, StepType.STEP_INTO)
         return
 
-    def call_event_handler_return(
-        code: CodeType, step_type: StepType
-    ) -> object:
+    def call_event_handler_return(code: CodeType, step_type: StepType) -> object:
         """Returning from a call event handler"""
         # Set local events based on step type and breakpoints.
         return
@@ -181,14 +200,14 @@ if __name__ == "__main__":
         print(
             f"event: {event}, code: {code_short(code)}, offset: *{instruction_offset}\nreturn value: {retval}"
         )
-        return leave_event_handler_return(code, StepType.STEP_INTO, StepGranularity.LINE_NUMBER)
+        return leave_event_handler_return(
+            code, StepType.STEP_INTO, StepGranularity.LINE_NUMBER
+        )
 
     def leave_event_handler_return(
-            code: CodeType, step_type: StepType,
-            granularity: StepGranularity.LINE_NUMBER
-
+        code: CodeType, step_type: StepType, granularity: StepGranularity.LINE_NUMBER
     ) -> object:
-        """Returning from a return or yeild event handler"""
+        """Returning from a return or yield event handler"""
         # Set local events based on step type and breakpoints.
         return
 
@@ -207,7 +226,11 @@ if __name__ == "__main__":
     print(f"tool_id is {tool_id}, events_mask is {events_mask}")
 
     callback_hooks = {
-        E.CALL: call_event_callback,
+        E.CALL: (
+            lambda code, instruction_offset, callable_obj, args: call_event_callback(
+                tool_id, "call", code, instruction_offset, callable_obj, args
+            )
+        ),
         E.LINE: line_event_callback,
         E.PY_RETURN: lambda code, instruction_offset, retval: leave_event_callback(
             "return", code, instruction_offset, retval
