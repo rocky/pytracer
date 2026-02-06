@@ -124,6 +124,9 @@ class FixedList:
 # A list of the registered hooks keyed by sys.monitoring.events.
 MONITOR_HOOKS = FixedList(None, MAX_TOOL_IDS)
 
+# A list of the registered hooks keyed by sys.monitoring.events.
+MONITOR_FILTERS = FixedList(None, MAX_TOOL_IDS)
+
 # A list of tool names
 TOOL_NAME = FixedList(None, MAX_TOOL_IDS)
 
@@ -189,8 +192,9 @@ def add_trace_callbacks(
     tool_name: str,
     trace_callbacks: Dict[int, CodeType],
     events_mask: Optional[int] = None,
-    is_global: bool=True,
-    code: Optional[CodeType] = None
+    is_global: bool = True,
+    code: Optional[CodeType] = None,
+    ignore_filter=None,
 ) -> Optional[Tuple[int, int]]:
     """For each event and callback function in `trace_callbacks`,
     register that event under `tool_name`.
@@ -290,6 +294,7 @@ def mstart(
     events_set: Optional[Set[str]] = None,
     is_global: bool = True,
     code: Optional[CodeType] = None,
+    ignore_filter=None,
 ) -> Tuple[int, int]:
     """
     Start using any previously-registered trace hooks. If
@@ -303,9 +308,12 @@ def mstart(
         if trace_callbacks is None:
             return tool_id, None
         pass
+    if ignore_filter is not None:
+        MONITOR_HOOKS[tool_id] = ignore_filter
     return tool_id, add_trace_callbacks(
         tool_name, trace_callbacks, events_set, is_global, code
     )
+
 
 # Think about: we could return the uncleared event names in addition to the
 # event set. And/or a the list found and cleared.
@@ -464,6 +472,7 @@ def start_local(
     tool_id: Optional[int] = None,
     events_set: Optional[Set[str]] = None,
     code: Optional[CodeType] = None,
+    ignore_filter: Optional[CodeType] = None,
 ) -> Tuple[int, int]:
     """
     Start using any previously-registered trace hooks. If
@@ -472,7 +481,16 @@ def start_local(
     """
     if code is None:
         code = sys._getframe(1).f_code
-    return mstart(tool_name, trace_callbacks, events_set, is_global=False, code=code)
+    tool_id, event_mask = mstart(
+        tool_name,
+        trace_callbacks,
+        events_set,
+        is_global=False,
+        code=code,
+        ignore_filter=ignore_filter,
+    )
+    return tool_id, event_mask
+
 
 # Demo it
 if __name__ == "__main__":
@@ -513,7 +531,7 @@ if __name__ == "__main__":
         if ignore_filter.is_excluded(code):
             return sys.monitoring.DISABLE
 
-        print(f"line event: code: {code_short(code)}, line: {line_number}")
+        print(f"EVENT: line, code:\n\t{code_short(code)}, line: {line_number}")
 
         global trace_count
         if trace_count > 0:
@@ -530,7 +548,7 @@ if __name__ == "__main__":
             return sys.monitoring.DISABLE
 
         print(
-            f"call event: code: {code_short(code)}, offset: *{instruction_offset} call: {callable_obj}"
+            f"EVENT: call, code:\n\t{code_short(code)}, offset: *{instruction_offset} call: {callable_obj}"
         )
 
         if args == sys.monitoring.MISSING:
@@ -556,7 +574,7 @@ if __name__ == "__main__":
         foo("bar")
 
     print(f"** Monitoring started before start(): {is_started(1)}")
-    tool_id, events_mask = mstart(hook_name, tool_id=1)
+    tool_id, events_mask = mstart(hook_name, tool_id=1, ignore_filter=ignore_filter)
     print(f"tool_id is {tool_id}, events_mask: {events_mask}")
 
     callback_hooks = {

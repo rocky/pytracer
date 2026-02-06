@@ -5,6 +5,7 @@ Centralized Trace management of ``sys.monitor`` and ``sys.settrace``a.
 from tracer.tracefilter import (
     get_code_object,
     get_module_object,
+    TraceFilter,
 )
 
 from tracer.tracer import (
@@ -46,6 +47,7 @@ __all__ = [
     "HOOKS",
     "MONITOR_HOOKS",
     "PytraceException",
+    "TraceFilter",
     "__version__",
     "add_hook",
     "add_trace_callbacks",
