@@ -96,7 +96,9 @@ FRAME_TRACKING: Dict[FrameType, FrameTracking] = {}
 
 # Event mask that should be use to callback on
 # finish or return from function, method or module.
-STEP_OUT_EVENTS = E.PY_YIELD | E.PY_RETURN | E.RAISE | E.C_RETURN | E.PY_UNWIND
+# Note: we cannot include global events like E.RAISE or E.PY_UNWIND
+# we also cannot include C events like C_RETURN
+STEP_OUT_EVENTS = E.PY_YIELD | E.PY_RETURN
 
 # Event mask that should be use to callback on
 # line stepping. This should
@@ -149,12 +151,15 @@ def set_step_out(tool_id: int, code: CodeType):
     # event_bitmask = sys.montoring.get_events(tool_id)
     sys.monitoring.set_local_events(STEP_OUT_EVENTS, code)
 
+
 def code_short(code: CodeType) -> str:
     import os.path as osp
 
     return f"{code.co_name} in {osp.basename(code.co_filename)}"
 
+
 # ignore_filter = tracefilter.TraceFilter([sys_monitoring, sys.monitoring])
+
 
 def line_event_callback(tool_id: int, code: CodeType, line_number: int) -> object:
     """A line event callback trace function"""
@@ -167,11 +172,13 @@ def line_event_callback(tool_id: int, code: CodeType, line_number: int) -> objec
         code, StepType.STEP_INTO, StepGranularity.LINE_NUMBER
     )
 
+
 def line_event_handler_return(
     code: CodeType, step_type: StepType, granularity: StepGranularity
 ) -> object:
     """A line event callback trace function"""
     return
+
 
 def call_event_callback(
     tool_id: int,
@@ -188,19 +195,47 @@ def call_event_callback(
     print(
         (
             f"\nEVENT: {event}, tool id: {tool_id}, code:\n\t"
-            f"{code_short(code)}, offset: *{instruction_offset} call: {callable_obj}"
+            f"{code_short(code)}, offset: *{instruction_offset} call: {callable_obj}, args: {args}"
         )
     )
     return call_event_handler_return(code, StepType.STEP_INTO)
     return
+
 
 def call_event_handler_return(code: CodeType, step_type: StepType) -> object:
     """Returning from a call event handler"""
     # Set local events based on step type and breakpoints.
     return
 
+
+def instruction_event_callback(
+    tool_id: int,
+    event: str,
+    code: CodeType,
+    instruction_offset: int,
+) -> object:
+    """A call event callback trace function"""
+    # if ignore_filter.is_excluded(callable_obj) or ignore_filter.is_excluded(code):
+    #     return sys.monitoring.DISABLE
+
+    print(
+        (
+            f"\nEVENT: {event}, tool id: {tool_id}, code:\n\t"
+            f"{code_short(code)}, offset: *{instruction_offset}"
+        )
+    )
+    return call_event_handler_return(code, StepType.STEP_INTO)
+    return
+
+
+def instruction_event_handler_return(code: CodeType, step_type: StepType) -> object:
+    """Returning from a call event handler"""
+    # Set local events based on step type and breakpoints.
+    return
+
+
 def leave_event_callback(
-        tool_id: int, event: str, code: CodeType, instruction_offset: int, retval: object
+    tool_id: int, event: str, code: CodeType, instruction_offset: int, retval: object
 ):
     """A Return and Yield event callback trace function"""
     print(
@@ -211,6 +246,7 @@ def leave_event_callback(
         code, StepType.STEP_INTO, StepGranularity.LINE_NUMBER
     )
 
+
 def leave_event_handler_return(
     code: CodeType, step_type: StepType, granularity: StepGranularity.LINE_NUMBER
 ) -> object:
@@ -218,25 +254,29 @@ def leave_event_handler_return(
     # Set local events based on step type and breakpoints.
     return
 
-callback_hooks = {
-    E.CALL: (
-        lambda code, instruction_offset, callable_obj, args: call_event_callback(
-            tool_id, "call", code, instruction_offset, callable_obj, args
-        )
-    ),
-    E.LINE: (
-        lambda code, line_number: line_event_callback(
-            tool_id, code, line_number
-        )
-    ),
-    E.PY_RETURN: lambda code, instruction_offset, retval: leave_event_callback(
-        tool_id, "return", code, instruction_offset, retval
-    ),
-    E.PY_YIELD: lambda code, instruction_offset, retval: leave_event_callback(
-        tool_id, "yield", code, instruction_offset, retval
-    ),
-}
 
+def set_callback_hooks_for_toolid(tool_id: int) -> dict:
+    return {
+        E.CALL: (
+            lambda code, instruction_offset, callable_obj, args: call_event_callback(
+                tool_id, "call", code, instruction_offset, callable_obj, args
+            )
+        ),
+        E.INSTRUCTION: (
+            lambda code, instruction_offset: instruction_event_callback(
+                tool_id, "instruction", code, instruction_offset
+            )
+        ),
+        E.LINE: (
+            lambda code, line_number: line_event_callback(tool_id, code, line_number)
+        ),
+        E.PY_RETURN: lambda code, instruction_offset, retval: leave_event_callback(
+            tool_id, "return", code, instruction_offset, retval
+        ),
+        E.PY_YIELD: lambda code, instruction_offset, retval: leave_event_callback(
+            tool_id, "yield", code, instruction_offset, retval
+        ),
+    }
 
 
 # Demo it
@@ -244,7 +284,7 @@ if __name__ == "__main__":
 
     # import tracefilter
     # import sys_monitoring
-    from sys_monitoring import mstart, start_local, mstop
+    from sys_monitoring import mstart, mstop, start_local
 
     hook_name = "tracer.stepping"
 
@@ -260,8 +300,9 @@ if __name__ == "__main__":
         foo("bar")
 
     tool_id, events_mask = mstart(hook_name, tool_id=1)
-    print(f"tool_id is {tool_id}, events_mask is {events_mask}")
+    callback_hooks = set_callback_hooks_for_toolid(tool_id)
 
+    print(f"tool_id is {tool_id}, events_mask is {events_mask}")
 
     start_local(hook_name, callback_hooks, E.LINE, code=bar.__code__)
     x = 1

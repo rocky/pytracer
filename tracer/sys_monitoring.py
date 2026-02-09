@@ -34,7 +34,6 @@ behaves analogous to threading.settrace.
 
 import inspect
 import sys
-
 from types import CodeType
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
@@ -470,21 +469,22 @@ def start_local(
     tool_name: str,
     trace_callbacks: Optional[Dict[int, CodeType]] = None,
     tool_id: Optional[int] = None,
-    events_set: Optional[Set[str]] = None,
     code: Optional[CodeType] = None,
+    events_set: Optional[Set[str]] = None,
     ignore_filter: Optional[CodeType] = None,
 ) -> Tuple[int, int]:
-    """
-    Start using any previously-registered trace hooks. If
-    options[trace_func] is not None, we will search for that and add it, if it's
-    not already added.
+    """Start local event tracing. If trace_callbacks is None, we will
+    search for that and add it, if it's not already added.  If
+    `events_set` is None, the default, then all events are set.
+    `ignore_filter` lists code objects and modules that should be ignored.
     """
     if code is None:
         code = sys._getframe(1).f_code
     tool_id, event_mask = mstart(
-        tool_name,
-        trace_callbacks,
-        events_set,
+        tool_name=tool_name,
+        trace_callbacks=trace_callbacks,
+        tool_id=tool_id,
+        events_set=events_set,
         is_global=False,
         code=code,
         ignore_filter=ignore_filter,
@@ -502,6 +502,7 @@ if __name__ == "__main__":
     hook_name = "tracer.sys_monitoring"
 
     import importlib
+
     import tracefilter
 
     ignore_filter = tracefilter.TraceFilter(
