@@ -112,7 +112,7 @@ def set_breakpoint(tool_id: int, location: Location):
     return
 
 
-def set_step_into(tool_id: int, code: CodeType, event_set: int):
+def set_step_into(tool_id: int, frame: FrameType, event_set: int):
     """
     Set local callback for a `step over` in `code`.
     `event_set` should have an event mask for local events line or
@@ -125,6 +125,9 @@ def set_step_into(tool_id: int, code: CodeType, event_set: int):
     event_set &= ~GLOBAL_EVENTS
 
     combined_event_set = (STEP_OUT_EVENTS | event_set) | E.CALL
+
+    FRAME_TRACKING[frame] = FrameTracking(combined_event_set, StepType.STEP_INTO)
+    code = frame.f_code
     sys.monitoring.set_local_events(tool_id, code, combined_event_set)
 
 
@@ -192,21 +195,29 @@ def call_event_callback(
     # if ignore_filter.is_excluded(callable_obj) or ignore_filter.is_excluded(code):
     #     return sys.monitoring.DISABLE
 
-    events_mask = sys.monitoring.get_local_events(tool_id, code)
+    ### This is the code that gets run inside the hook, e.g. a debugger REPL.
+    ### The code inside the hook should set events mask
 
+    # For testing, we don't want to change events_mask. Just note it.
+    events_mask = sys.monitoring.get_local_events(tool_id, code)
     print(
         (
             f"\n{event.upper()}: tool id: {tool_id}, {bin(events_mask)} ({events_mask}) code:\n\t"
             f"{code_short(code)}, offset: *{instruction_offset} call: {callable_obj}, args: {args}"
         )
     )
-    return call_event_handler_return(code, StepType.STEP_INTO)
+    ### end code inside hook
+
+    return call_event_handler_return(tool_id, code, events_mask)
     return
 
 
-def call_event_handler_return(code: CodeType, step_type: StepType) -> object:
-    """Returning from a call event handler"""
+def call_event_handler_return(tool_id: int, code: CodeType, events_mask: int) -> object:
+    """Returning from a call event handler. We assume events_mask does not have
+    any events that are not local events.
+    """
     # Set local events based on step type and breakpoints.
+    sys.monitoring.set_local_events(tool_id, code, events_mask)
     return
 
 
@@ -217,8 +228,10 @@ def instruction_event_callback(
     instruction_offset: int,
 ) -> object:
     """A call event callback trace function"""
-    # if ignore_filter.is_excluded(callable_obj) or ignore_filter.is_excluded(code):
-    #     return sys.monitoring.DISABLE
+
+    if ignore_filter.is_excluded(code):
+        print(f"WOOT ignoring {code}")
+        return
 
     events_mask = sys.monitoring.get_local_events(tool_id, code)
 
@@ -228,7 +241,7 @@ def instruction_event_callback(
             f"{code_short(code)}, offset: *{instruction_offset}"
         )
     )
-    return call_event_handler_return(code, StepType.STEP_INTO)
+    return call_event_handler_return(tool_id, code, events_mask)
     return
 
 
@@ -242,20 +255,38 @@ def leave_event_callback(
     tool_id: int, event: str, code: CodeType, instruction_offset: int, retval: object
 ):
     """A Return and Yield event callback trace function"""
+
+    ### This is the code that gets run inside the hook, e.g. a debugger REPL.
+    ### The code inside the hook should set events mask
+
+    # For testing, we don't want to change events_mask. Just note it.
+    events_mask = sys.monitoring.get_local_events(tool_id, code)
+
     print(
-        f"\n{event.upper()}: tool_id: {tool_id} code:\n\t"
+        f"\n{event.upper()}: tool_id: {tool_id} code: {bin(events_mask)}\n\t"
         f"{code_short(code)}, offset: *{instruction_offset}\nreturn value: {retval}"
     )
-    return leave_event_handler_return(
-        code, StepType.STEP_INTO, StepGranularity.LINE_NUMBER
-    )
+
+    frame = sys._getframe(1)
+    while frame is not None:
+        if frame.f_code == code:
+            break
+        frame = frame.f_back
+    else:
+        print("Woah! did not find frame")
+        return
+
+    return leave_event_handler_return(frame)
 
 
-def leave_event_handler_return(
-    code: CodeType, step_type: StepType, granularity: StepGranularity.LINE_NUMBER
-) -> object:
+def leave_event_handler_return(frame: FrameType) -> object:
     """Returning from a return or yield event handler"""
-    # Set local events based on step type and breakpoints.
+    # Remove Set local events based on step type and breakpoints.
+    if frame in FRAME_TRACKING:
+        print("WOOT - Deleting frame")
+        del FRAME_TRACKING[frame]
+
+    # Calling set_local_events makes no sense here since we are about to return
     return
 
 
@@ -286,34 +317,55 @@ def set_callback_hooks_for_toolid(tool_id: int) -> dict:
 # Demo it
 if __name__ == "__main__":
 
-    # import tracefilter
+    import tracefilter
     # import sys_monitoring
     from sys_monitoring import mstart, mstop, start_local
 
-    hook_name = "tracer.stepping"
+    ignore_filter = tracefilter.TraceFilter([sys.monitoring])
+
+    tool_name = "tracer.stepping"
 
     def foo(*args):
         print(
-            f"XXX2 foo local {sys.monitoring.get_local_events(tool_id, bar.__code__)}"
+            f"\tinside foo: local {sys.monitoring.get_local_events(tool_id, bar.__code__)}"
         )
-        print(f"XXX3 foo all (global) {sys.monitoring.get_events(tool_id)}")
-        print(f"foo called with {args}")
+        print(f"\tinside foo: foo all (global) {sys.monitoring.get_events(tool_id)}")
+        print(f"\tinside foo: called with {args}")
 
     def bar():
         foo("foo")
         foo("bar")
 
-    tool_id, events_mask = mstart(hook_name, tool_id=1)
+    tool_id, events_mask = mstart(tool_name, tool_id=1)
     callback_hooks = set_callback_hooks_for_toolid(tool_id)
 
     print(f"tool_id is {tool_id}, events_mask is {events_mask}")
 
-    start_local(hook_name, callback_hooks, E.LINE, code=bar.__code__)
+    print("\nUSING START_LOCAL with LINE EVENTS, default step over")
+    print("=" * 50)
+    start_local(
+        tool_name,
+        callback_hooks,
+        tool_id,
+        code=bar.__code__,
+        events_set=E.LINE,
+        ignore_filter=ignore_filter,
+    )
     x = 1
     bar()
-    mstop(hook_name)
-    print("=" * 40)
-    # mstart(hook_name)
-    # bar()
-    # mstop(hook_name)
-    # print("=" * 40)
+    mstop(tool_name)
+
+    # Do this again using start_local
+    print("\nUSING START_LOCAL (all events)")
+    print("=" * 50)
+
+    start_local(tool_name, code=bar.__code__)
+    bar()
+    mstop(tool_name)
+
+    # Do this again start with inc
+    print("\nUSING START_LOCAL WITH INSTRUCTION only")
+    print("=" * 50)
+    start_local(tool_name, code=bar.__code__, events_set=E.INSTRUCTION)
+    bar()
+    mstop(tool_name)

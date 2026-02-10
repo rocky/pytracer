@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#   Copyright (C) 2008-2009, 2013, 2024 Rocky Bernstein <rocky@gnu.org>
+#   Copyright (C) 2008-2009, 2013, 2024, 2026 Rocky Bernstein <rocky@gnu.org>
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -23,9 +23,19 @@ functions.
 import inspect
 import sys
 import threading
-
 from enum import Enum
 from typing import Any, Callable, NamedTuple, Optional
+
+# The below is a hack to make "import tracefilter". work when running
+# from inside this directory.
+#
+# In this situation, we need to have "tracefilter" defined because we
+# have both a directory named "tracer" which is a module and package,
+# and a module inside that called "tracer".
+try:
+    import tracefilter
+except ImportError:
+    pass
 
 
 class TraceEntry(NamedTuple):
@@ -107,7 +117,6 @@ def _tracer_func(frame, event, arg):
     """The internal function set by sys.settrace which runs
     all of the user-registered trace hook functions."""
 
-    global TRACE_SUSPEND, HOOKS, debug
     if debug:
         print(f"{event} -- {frame.f_code.co_filename}:{frame.f_lineno}")
 
@@ -288,7 +297,6 @@ def clear_hooks():
 
 def clear_hooks_and_stop():
     "clear all trace hooks and stop tracing"
-    global STARTED_STATE
     if STARTED_STATE:
         stop()
     clear_hooks()
@@ -297,7 +305,6 @@ def clear_hooks_and_stop():
 
 def size():
     """Returns the number of trace hooks installed, an integer."""
-    global HOOKS
     return len(HOOKS)
 
 
@@ -306,7 +313,6 @@ def is_started():
     or better, keeping track is done by internal tracking. Thus calls to
     sys.settrace outside of Tracer won't be detected.(
     """
-    global STARTED_STATE
     return STARTED_STATE
 
 
@@ -316,7 +322,6 @@ def remove_hook(trace_func, stop_if_empty=False):
     callback functions, None is returned. On successful
     removal, the number of callback functions remaining is
     returned."""
-    global HOOKS
     i = find_hook(trace_func)
     if i is not None:
         del HOOKS[i]
@@ -354,7 +359,7 @@ def start(options=None):
     # existing hooks by using sys.gettrace().
 
     if sys.settrace(_tracer_func) is None:
-        global STARTED_STATE, HOOKS
+        global STARTED_STATE
         STARTED_STATE = True
         return len(HOOKS)
     if trace_func is not None:
@@ -365,7 +370,7 @@ def start(options=None):
 def stop():
     """Stop all trace hooks"""
     if sys.settrace(None) is None:
-        global HOOKS, STARTED_STATE
+        global STARTED_STATE
         STARTED_STATE = False
         return len(HOOKS)
     raise NotImplementedError("sys.settrace() doesn't seem to be implemented")
@@ -378,8 +383,6 @@ if __name__ == "__main__":
     t.sort()
     print("EVENT2SHORT.keys() == ALL_EVENT_NAMES: %s" % (tuple(t) == ALL_EVENT_NAMES))
     trace_count = 10
-
-    import tracefilter
 
     ignore_filter = tracefilter.TraceFilter([find_hook, stop, remove_hook])
 
