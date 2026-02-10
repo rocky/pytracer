@@ -58,28 +58,7 @@ Location = Union[LineNumberValue, LineNumberOffsetValue, CodeOffsetValue]
 CODE_TRACKING: Dict[Tuple[int, int, CodeType], List[Location]] = {}
 
 
-@dataclass
-class FrameTracking:
-    """
-    Information about the current frame with regards to monitoring.
-    We use this to support "step in", "step over" and "step out".
-    """
-
-    # event_mask is gets set into this mask for this frame.  The
-    # caller should factor in whether there are breakpoints in the
-    # code.  If there are breakpoints, events will change depending on
-    # whether the breakpoint location is on a line, or an instruction.
-    # Also, frame status figure into the local mask: whether we are
-    # stepping, in, over, or out.
-    local_event_mask: int
-
-    # status: "in", "over" or, "out"
-    status: StepType
-
-    # Should we include breakpoints and test here?
-
-
-FRAME_TRACKING: Dict[FrameType, FrameTracking] = {}
+FRAME_TRACKING: Dict[FrameType, StepType] = {}
 
 # CODE2EVENTS: Dict[(int, int, CodeType), ]
 
@@ -126,12 +105,15 @@ def set_step_into(tool_id: int, frame: FrameType, event_set: int):
 
     combined_event_set = (STEP_OUT_EVENTS | event_set) | E.CALL
 
-    FRAME_TRACKING[frame] = FrameTracking(combined_event_set, StepType.STEP_INTO)
+    # Note step out is desired in FRAME_TRACKING so it can be
+    # detected in the return portion of the callback handlers.
+    FRAME_TRACKING[frame] = StepType.STEP_INTO
+
     code = frame.f_code
     sys.monitoring.set_local_events(tool_id, code, combined_event_set)
 
 
-def set_step_over(tool_id: int, code: CodeType, event_set: int):
+def set_step_over(tool_id: int, frame: FrameType, event_set: int):
     """
     Set local callback for a `step over` in `code`.
     `event_set` should have an event mask for local events line or
@@ -143,10 +125,22 @@ def set_step_over(tool_id: int, code: CodeType, event_set: int):
     event_set &= ~GLOBAL_EVENTS
 
     combined_event_set = (STEP_OUT_EVENTS | event_set) & ~E.CALL
+
+    # Note step out is desired in FRAME_TRACKING so it can be
+    # detected in the return portion of the callback handlers.
+    FRAME_TRACKING[frame] = StepType.STEP_OVER
+
+    code = frame.f_code
     sys.monitoring.set_local_events(tool_id, code, combined_event_set)
 
 
-def set_step_out(tool_id: int, code: CodeType):
+def set_step_out(tool_id: int, frame: FrameType):
+
+    # Note step out is desired in FRAME_TRACKING so it can be
+    # detected in the return portion of the callback handlers.
+    FRAME_TRACKING[frame] = StepType.STEP_OUT
+
+    code = frame.f_code
     sys.monitoring.set_local_events(STEP_OUT_EVENTS, code)
 
 
@@ -165,19 +159,36 @@ def line_event_callback(tool_id: int, code: CodeType, line_number: int) -> objec
     # if ignore_filter.is_excluded(code):
     #    return sys.monitoring.DISABLE
 
+    ### This is the code that gets run inside the hook, e.g. a debugger REPL.
+    ### The code inside the hook should set:
+
     events_mask = sys.monitoring.get_local_events(tool_id, code)
 
+    # Below: 0 is us; 1 is our lambda, and 2 is the user code.
+    frame = sys._getframe(2)
+    if frame.f_code != code:
+        print("Woah -- code vs frame code mismatch in line event")
+
+    if (step_type := FRAME_TRACKING.get(frame, None)) is None:
+        # print(f"XXX first time for {frame}")
+        step_type = StepType.STEP_OVER
+        if (prev_frame := frame.f_back) is not None:
+            step_type = FRAME_TRACKING.get(prev_frame, StepType.STEP_OVER)
+            FRAME_TRACKING[frame] = step_type
+        else:
+            print("Can't find frame")
+
     print(
-        f"\nLINE: tool id: {tool_id}, {bin(events_mask)} ({events_mask}) code:"
+        f"\nLINE: tool id: {tool_id}, {bin(events_mask)} ({events_mask}) {step_type} code:"
         f"\n\t{code_short(code)}, line: {line_number}"
     )
 
-    return line_event_handler_return(tool_id, code, StepType.STEP_INTO, events_mask)
+    ### end code inside hook.
+
+    return line_event_handler_return(tool_id, code, events_mask)
 
 
-def line_event_handler_return(
-    tool_id: int, code: CodeType, step_type: StepType, events_mask: int
-) -> object:
+def line_event_handler_return(tool_id: int, code: CodeType, events_mask: int) -> object:
     """A line event callback trace function"""
     sys.monitoring.set_local_events(tool_id, code, events_mask)
     return
@@ -196,28 +207,46 @@ def call_event_callback(
     #     return sys.monitoring.DISABLE
 
     ### This is the code that gets run inside the hook, e.g. a debugger REPL.
-    ### The code inside the hook should set events mask
+    ### The code inside the hook should set:
+    # * events_mask
+    # * frame
+    # * step_type
 
     # For testing, we don't want to change events_mask. Just note it.
     events_mask = sys.monitoring.get_local_events(tool_id, code)
+
+    # Below: 0 is us; 1 is our lambda, and 2 is the user code.
+    frame = sys._getframe(2)
+    if frame.f_code != code:
+        print("Woah -- code vs frame code mismatch in line event")
+
+    step_type = FRAME_TRACKING.get(frame, StepType.STEP_OVER)
+
     print(
         (
-            f"\n{event.upper()}: tool id: {tool_id}, {bin(events_mask)} ({events_mask}) code:\n\t"
+            f"\n{event.upper()}: tool id: {tool_id}, {bin(events_mask)} ({events_mask}) {step_type} code:\n\t"
             f"{code_short(code)}, offset: *{instruction_offset} call: {callable_obj}, args: {args}"
         )
     )
-    ### end code inside hook
 
-    return call_event_handler_return(tool_id, code, events_mask)
-    return
+    ### end code inside hook. events_mask, frame and step_type should be set.
+
+    if hasattr(callable_obj, "__code__") and isinstance(callable_obj.__code__, CodeType):
+        return call_event_handler_return(tool_id, callable_obj.__code__, events_mask, step_type)
 
 
-def call_event_handler_return(tool_id: int, code: CodeType, events_mask: int) -> object:
+def call_event_handler_return(
+    tool_id: int, code: CodeType, events_mask: int, step_type: StepType
+) -> object:
     """Returning from a call event handler. We assume events_mask does not have
     any events that are not local events.
     """
-    # Set local events based on step type and breakpoints.
-    sys.monitoring.set_local_events(tool_id, code, events_mask)
+    if step_type == StepType.STEP_INTO:
+        # Propagate local tracking into code object to be called and it step type.
+        # FIXME: it would be better to attach it to the particular *frame*
+        # that will be called.
+        sys.monitoring.set_local_events(tool_id, code, events_mask)
+
     return
 
 
@@ -237,13 +266,15 @@ def instruction_event_callback(
             f"{code_short(code)}, offset: *{instruction_offset}"
         )
     )
-    return call_event_handler_return(tool_id, code, events_mask)
-    return
+    return instruction_event_handler_return(tool_id, code, events_mask)
 
 
-def instruction_event_handler_return(code: CodeType, step_type: StepType) -> object:
-    """Returning from a call event handler"""
+def instruction_event_handler_return(
+    tool_id: int, code: CodeType, events_mask: int
+) -> object:
+    """Returning from a call event trace function"""
     # Set local events based on step type and breakpoints.
+    sys.monitoring.set_local_events(tool_id, code, events_mask)
     return
 
 
@@ -253,14 +284,16 @@ def leave_event_callback(
     """A Return and Yield event callback trace function"""
 
     ### This is the code that gets run inside the hook, e.g. a debugger REPL.
-    ### The code inside the hook should set events mask
+    ### The code inside the hook should set:
+    # * events_mask
+    # * frame
 
     # For testing, we don't want to change events_mask. Just note it.
     events_mask = sys.monitoring.get_local_events(tool_id, code)
 
     print(
         f"\n{event.upper()}: tool_id: {tool_id} code: {bin(events_mask)}\n\t"
-        f"{code_short(code)}, offset: *{instruction_offset}\nreturn value: {retval}"
+        f"{code_short(code)}, offset: *{instruction_offset}\n\treturn value: {retval}"
     )
 
     frame = sys._getframe(1)
@@ -272,17 +305,24 @@ def leave_event_callback(
         print("Woah! did not find frame")
         return
 
-    return leave_event_handler_return(frame)
+    ### end code inside hook; `frame` should be set.
+
+    return leave_event_handler_return(tool_id, frame)
 
 
-def leave_event_handler_return(frame: FrameType) -> object:
+def leave_event_handler_return(tool_id: int, frame: FrameType) -> object:
     """Returning from a return or yield event handler"""
     # Remove Set local events based on step type and breakpoints.
     if frame in FRAME_TRACKING:
-        print("WOOT - Deleting frame")
+        # print("WOOT - Deleting frame")
         del FRAME_TRACKING[frame]
 
-    # Calling set_local_events makes no sense here since we are about to return
+        code = frame.f_code
+        # TODO: Check we have breakpoints in code,
+        have_breakpoints = True
+        if have_breakpoints:
+            sys.monitoring.set_local_events(tool_id, code, 0)
+    #
     return
 
 

@@ -1,19 +1,22 @@
 """
-Stepping for line and instruction events basic block raising an exception,
-and index error.
+Stepping for simple try/except block.
 """
+import sys
 
 from tracer.stepping import set_callback_hooks_for_toolid, set_step_into
 from tracer.sys_monitoring import E, mstart, mstop, start_local
 
 
-def stepping_index_error(arg: list, event_mask: int) -> int:
-    set_step_into(tool_id, stepping_index_error.__code__, event_mask)
-    y = arg[1]
-    return y
+def stepping_try_except(arg: list, event_mask: int) -> int:
+    set_step_into(tool_id, sys._getframe(0), event_mask)
+    try:
+        arg[1] += 1
+    except Exception:
+        return 5
+    return 2
 
 
-hook_name = "stepping-into-index-error"
+hook_name = "stepping-try-except"
 tool_id, events_mask = mstart(hook_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
 
@@ -24,13 +27,10 @@ print("=" * 40)
 start_local(
     hook_name,
     callback_hooks,
-    code=stepping_index_error.__code__,
+    code=stepping_try_except.__code__,
     events_set=E.LINE,
 )
-try:
-    stepping_index_error([], E.LINE)
-except Exception:
-    pass
+stepping_try_except([], E.LINE)
 mstop(hook_name)
 
 # Next, step instructions
@@ -41,13 +41,10 @@ print("=" * 40)
 start_local(
     hook_name,
     callback_hooks,
-    code=stepping_index_error.__code__,
+    code=stepping_try_except.__code__,
     events_set=E.INSTRUCTION,
 )
-try:
-    stepping_index_error([], E.INSTRUCTION)
-except Exception:
-    pass
+stepping_try_except([], E.INSTRUCTION)
 mstop(hook_name)
 
 # Finally, step both instructions and lines
@@ -60,11 +57,8 @@ print("=" * 40)
 start_local(
     hook_name,
     callback_hooks,
-    code=stepping_index_error.__code__,
+    code=stepping_try_except.__code__,
     events_set=E.INSTRUCTION | E.LINE,
 )
-try:
-    stepping_index_error([], E.INSTRUCTION | E.LINE)
-except Exception:
-    pass
+stepping_try_except([], E.INSTRUCTION | E.LINE)
 mstop(hook_name)
