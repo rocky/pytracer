@@ -23,9 +23,11 @@ try:
 except ImportError:
     # Compatibility to allow running this code from older Python
     from functools import lru_cache
+
     def cache(user_function, /):
         'Simple lightweight unbounded cache.  Sometimes called "memoize".'
         return lru_cache(maxsize=None)(user_function)
+
 
 from types import CodeType, ModuleType
 from typing import Any, Dict, Iterable, Optional, Set
@@ -69,7 +71,9 @@ def get_code_object(object: Any) -> Optional[CodeType]:
         return None
     return code if isinstance(code, CodeType) else None
 
+
 PATH2MODULE: Dict[str, ModuleType] = {}
+
 
 @cache
 def get_modules_for_path(module_values, module_path: str) -> tuple:
@@ -77,7 +81,8 @@ def get_modules_for_path(module_values, module_path: str) -> tuple:
         module
         for module in module_values
         if hasattr(module, "__file__") and module.__file__ == module_path
-        )
+    )
+
 
 def get_module_object(object: Any) -> Optional[ModuleType]:
     """Given a module name, frame, or code object, return the
@@ -119,7 +124,7 @@ class TraceFilter:
     certain frames, functions, classes, or modules should be skipped/included in tracing.
     """
 
-    def __init__(self, exclude_items: Iterable=[]) -> Iterable:
+    def __init__(self, exclude_items: Iterable = []) -> Iterable:
         self.clear()
         self.append(exclude_items)
         return

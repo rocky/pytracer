@@ -39,6 +39,20 @@ from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 E = sys.monitoring.events
 
+LOCAL_EVENTS = (
+    E.PY_START
+    | E.BRANCH_LEFT
+    | E.BRANCH_RIGHT
+    | E.CALL
+    | E.INSTRUCTION
+    | E.JUMP
+    | E.LINE
+    | E.PY_RESUME
+    | E.PY_RETURN
+    | E.PY_YIELD
+    | E.STOP_ITERATION
+)
+
 # The maximum number of sys.monitoring tool IDs is 6 (range 0 to 5)
 MAX_TOOL_IDS = 6
 TOOL_ID_RANGE = range(MAX_TOOL_IDS)

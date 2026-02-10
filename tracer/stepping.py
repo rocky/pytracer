@@ -10,19 +10,8 @@ from typing import Dict, List, Tuple, Union
 
 E = sys.monitoring.events
 
-LOCAL_EVENTS = (
-    E.PY_START
-    | E.BRANCH_LEFT
-    | E.BRANCH_RIGHT
-    | E.CALL
-    | E.INSTRUCTION
-    | E.JUMP
-    | E.LINE
-    | E.PY_RESUME
-    | E.PY_RETURN
-    | E.PY_YIELD
-    | E.STOP_ITERATION
-)
+# Events that are not allowed in sys.monitoring.set_local_events
+GLOBAL_EVENTS = E.C_RAISE | E.C_RETURN | E.PY_UNWIND | E.RAISE
 
 
 class StepType(Enum):
@@ -96,8 +85,8 @@ FRAME_TRACKING: Dict[FrameType, FrameTracking] = {}
 
 # Event mask that should be use to callback on
 # finish or return from function, method or module.
-# Note: we cannot include global events like E.RAISE or E.PY_UNWIND
-# we also cannot include C events like C_RETURN
+# Note: we cannot include global events, specifically
+# those in GLOBAL_EVENTS since that is illegal for set_local_events().
 STEP_OUT_EVENTS = E.PY_YIELD | E.PY_RETURN
 
 # Event mask that should be use to callback on
@@ -131,6 +120,10 @@ def set_step_into(tool_id: int, code: CodeType, event_set: int):
     BRANCH_RIGHT, or STOP_ITERATION). It always adds a CALL event to the.
     local events to be tracked.
     """
+
+    # Clear global events that are illegal for `set_local_events()`.
+    event_set &= ~GLOBAL_EVENTS
+
     combined_event_set = (STEP_OUT_EVENTS | event_set) | E.CALL
     sys.monitoring.set_local_events(tool_id, code, combined_event_set)
 
@@ -143,12 +136,14 @@ def set_step_over(tool_id: int, code: CodeType, event_set: int):
     BRANCH_RIGHT, or STOP_ITERATION). It should *not* contain CALL.
     This will be masked out.
     """
+    # Clear global events that are illegal for `set_local_events()`.
+    event_set &= ~GLOBAL_EVENTS
+
     combined_event_set = (STEP_OUT_EVENTS | event_set) & ~E.CALL
     sys.monitoring.set_local_events(tool_id, code, combined_event_set)
 
 
 def set_step_out(tool_id: int, code: CodeType):
-    # event_bitmask = sys.montoring.get_events(tool_id)
     sys.monitoring.set_local_events(STEP_OUT_EVENTS, code)
 
 
@@ -167,16 +162,21 @@ def line_event_callback(tool_id: int, code: CodeType, line_number: int) -> objec
     # if ignore_filter.is_excluded(code):
     #    return sys.monitoring.DISABLE
 
-    print(f"\nEVENT: line, code:\n\t{code_short(code)}, line: {line_number}")
-    return line_event_handler_return(
-        code, StepType.STEP_INTO, StepGranularity.LINE_NUMBER
+    events_mask = sys.monitoring.get_local_events(tool_id, code)
+
+    print(
+        f"\nLINE: tool id: {tool_id}, {bin(events_mask)} ({events_mask}) code:"
+        f"\n\t{code_short(code)}, line: {line_number}"
     )
+
+    return line_event_handler_return(tool_id, code, StepType.STEP_INTO, events_mask)
 
 
 def line_event_handler_return(
-    code: CodeType, step_type: StepType, granularity: StepGranularity
+    tool_id: int, code: CodeType, step_type: StepType, events_mask: int
 ) -> object:
     """A line event callback trace function"""
+    sys.monitoring.set_local_events(tool_id, code, events_mask)
     return
 
 
@@ -192,9 +192,11 @@ def call_event_callback(
     # if ignore_filter.is_excluded(callable_obj) or ignore_filter.is_excluded(code):
     #     return sys.monitoring.DISABLE
 
+    events_mask = sys.monitoring.get_local_events(tool_id, code)
+
     print(
         (
-            f"\nEVENT: {event}, tool id: {tool_id}, code:\n\t"
+            f"\n{event.upper()}: tool id: {tool_id}, {bin(events_mask)} ({events_mask}) code:\n\t"
             f"{code_short(code)}, offset: *{instruction_offset} call: {callable_obj}, args: {args}"
         )
     )
@@ -218,9 +220,11 @@ def instruction_event_callback(
     # if ignore_filter.is_excluded(callable_obj) or ignore_filter.is_excluded(code):
     #     return sys.monitoring.DISABLE
 
+    events_mask = sys.monitoring.get_local_events(tool_id, code)
+
     print(
         (
-            f"\nEVENT: {event}, tool id: {tool_id}, code:\n\t"
+            f"\n{event.upper()}: tool id: {tool_id}, {bin(events_mask)} ({events_mask}) code:\n\t"
             f"{code_short(code)}, offset: *{instruction_offset}"
         )
     )
@@ -239,7 +243,7 @@ def leave_event_callback(
 ):
     """A Return and Yield event callback trace function"""
     print(
-        f"\nEVENT: {event}, tool_id: {tool_id} code:\n\t"
+        f"\n{event.upper()}: tool_id: {tool_id} code:\n\t"
         f"{code_short(code)}, offset: *{instruction_offset}\nreturn value: {retval}"
     )
     return leave_event_handler_return(

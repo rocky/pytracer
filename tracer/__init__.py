@@ -2,12 +2,21 @@
 Centralized Trace management of ``sys.monitor`` and ``sys.settrace``a.
 """
 
-from tracer.tracefilter import (
-    get_code_object,
-    get_module_object,
-    TraceFilter,
+from tracer.stepping import GLOBAL_EVENTS
+from tracer.sys_monitoring import (
+    ALL_EVENT_NAMES,
+    ALL_EVENTS,
+    EVENT2SHORT,
+    MONITOR_HOOKS,
+    PytraceException,
+    add_trace_callbacks,
+    find_hook_by_id,
+    find_hook_by_name,
+    msize,
+    mstart,
+    mstop,
 )
-
+from tracer.tracefilter import TraceFilter, get_code_object, get_module_object
 from tracer.tracer import (
     DEFAULT_ADD_HOOK_OPTS,
     HOOKS,
@@ -23,20 +32,6 @@ from tracer.tracer import (
     start,
     stop,
 )
-
-from tracer.sys_monitoring import (
-    ALL_EVENT_NAMES,
-    ALL_EVENTS,
-    EVENT2SHORT,
-    MONITOR_HOOKS,
-    PytraceException,
-    add_trace_callbacks,
-    find_hook_by_name,
-    find_hook_by_id,
-    msize,
-    mstart,
-    mstop,
-)
 from tracer.version import __version__
 
 __all__ = [
@@ -44,6 +39,7 @@ __all__ = [
     "ALL_EVENTS",
     "DEFAULT_ADD_HOOK_OPTS",
     "EVENT2SHORT",
+    "GLOBAL_EVENTS",
     "HOOKS",
     "MONITOR_HOOKS",
     "PytraceException",
