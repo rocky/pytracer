@@ -16,7 +16,7 @@ repos:
       - id: isort
         stages: [pre-commit]
 -   repo: https://github.com/psf/black
-    rev: 5.13.2
+    rev: 25.11.0
     hooks:
     - id: black
       language_version: python3
