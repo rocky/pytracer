@@ -229,10 +229,6 @@ def instruction_event_callback(
 ) -> object:
     """A call event callback trace function"""
 
-    if ignore_filter.is_excluded(code):
-        print(f"WOOT ignoring {code}")
-        return
-
     events_mask = sys.monitoring.get_local_events(tool_id, code)
 
     print(
