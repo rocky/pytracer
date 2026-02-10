@@ -231,8 +231,12 @@ def call_event_callback(
 
     ### end code inside hook. events_mask, frame and step_type should be set.
 
-    if hasattr(callable_obj, "__code__") and isinstance(callable_obj.__code__, CodeType):
-        return call_event_handler_return(tool_id, callable_obj.__code__, events_mask, step_type)
+    if hasattr(callable_obj, "__code__") and isinstance(
+        callable_obj.__code__, CodeType
+    ):
+        return call_event_handler_return(
+            tool_id, callable_obj.__code__, events_mask, step_type
+        )
 
 
 def call_event_handler_return(
@@ -279,7 +283,11 @@ def instruction_event_handler_return(
 
 
 def leave_event_callback(
-    tool_id: int, event: str, code: CodeType, instruction_offset: int, retval: object
+    tool_id: int,
+    event: str,
+    code: CodeType,
+    instruction_offset: int,
+    return_value: object,
 ):
     """A Return and Yield event callback trace function"""
 
@@ -293,7 +301,7 @@ def leave_event_callback(
 
     print(
         f"\n{event.upper()}: tool_id: {tool_id} code: {bin(events_mask)}\n\t"
-        f"{code_short(code)}, offset: *{instruction_offset}\n\treturn value: {retval}"
+        f"{code_short(code)}, offset: *{instruction_offset}\n\treturn value: {return_value}"
     )
 
     frame = sys._getframe(1)
