@@ -1,5 +1,5 @@
 """
-Stepping for a simple nested call.
+Stepping with a call which raises an exception
 """
 import sys
 
@@ -9,22 +9,35 @@ from tracer.sys_monitoring import E, mstart, mstop, start_local
 
 
 def nested_function(x: list) -> list:
-    return x
+    # Raises an IndexError
+    return x[100]
 
 
 def step_into_simple_nested_call(x: list) -> int:
-    set_step_into(tool_id, sys._getframe(0), E.LINE | E.PY_RETURN)
-    x = nested_function([1, 2, 3])
-    y = nested_function([4, 5, 6])
-    return x, y
+    set_step_into(tool_id, sys._getframe(0), E.LINE | E.PY_RETURN | E.PY_UNWIND)
+    try:
+        x = nested_function([1, 2, 3])
+    except IndexError:
+        pass
+    try:
+        return nested_function([4, 5, 6])
+    except IndexError:
+        return x
+
 
 def step_over_simple_nested_call(x: list) -> int:
     set_step_over(tool_id, sys._getframe(0), E.LINE | E.PY_RETURN)
-    x = nested_function([1, 2, 3])
-    return x
+    try:
+        x = nested_function([7, 8, 9])
+    except IndexError:
+        pass
+    try:
+        return nested_function([10, 11, 12])
+    except IndexError:
+        return x
 
 
-hook_name = "08-step-simple-nested-call"
+hook_name = "10-step-call-raising-exception"
 tool_id, events_mask = mstart(hook_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
 

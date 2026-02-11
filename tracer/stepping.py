@@ -15,6 +15,7 @@ GLOBAL_EVENTS = E.C_RAISE | E.C_RETURN | E.PY_UNWIND | E.RAISE
 
 
 class StepType(Enum):
+    NO_STEPPING = "no stepping"
     STEP_INTO = "step into"
     STEP_OUT = "step out"
     STEP_OVER = "step over"
@@ -169,6 +170,8 @@ def line_event_callback(tool_id: int, code: CodeType, line_number: int) -> objec
     if frame.f_code != code:
         print("Woah -- code vs frame code mismatch in line event")
 
+    # print(f"XXX FRAME: f_trace: {frame.f_trace}, f_trace_lines: {frame.f_trace_lines}, f_trace_opcodes: {frame.f_trace_opcodes}")
+
     if (step_type := FRAME_TRACKING.get(frame, None)) is None:
         # print(f"XXX first time for {frame}")
         step_type = StepType.STEP_OVER
@@ -254,6 +257,43 @@ def call_event_handler_return(
     return
 
 
+def exception_event_callback(
+    tool_id: int,
+    event: str,
+    code: CodeType,
+    instruction_offset: int,
+    exception: BaseException,
+):
+    """An event callback trace function for RAISE, RERAISE, EXCEPTION_HANDLED, PY_UNWIND,
+    PY_THROW, and STOP_ITERATION."""
+
+    ### This is the code that gets run inside the hook, e.g. a debugger REPL.
+    ### The code inside the hook should set:
+    # * events_mask
+    # * frame
+
+    # For testing, we don't want to change events_mask. Just note it.
+    events_mask = sys.monitoring.get_local_events(tool_id, code)
+
+    print(
+        f"\n{event.upper()}: tool_id: {tool_id} code: {bin(events_mask)}\n\t"
+        f"{code_short(code)}, offset: *{instruction_offset}\n\treturn value: {exception}"
+    )
+
+    frame = sys._getframe(1)
+    while frame is not None:
+        if frame.f_code == code:
+            break
+        frame = frame.f_back
+    else:
+        print("Woah! did not find frame")
+        return
+
+    ### end code inside hook; `frame` should be set.
+
+    return leave_event_handler_return(tool_id, frame)
+
+
 def instruction_event_callback(
     tool_id: int,
     event: str,
@@ -262,7 +302,15 @@ def instruction_event_callback(
 ) -> object:
     """A call event callback trace function"""
 
+    ### This is the code that gets run inside the hook, e.g. a debugger REPL.
+    ### The code inside the hook should set `events_mask`.
+
+    # For testing, we don't want to change events_mask. Just note it.
     events_mask = sys.monitoring.get_local_events(tool_id, code)
+
+    # # Below: 0 is us; 1 is our lambda, and 2 is the user code.
+    # frame = sys._getframe(2)
+    # print(f"XXX FRAME: f_trace: {frame.f_trace}, f_trace_lines: {frame.f_trace_lines}, f_trace_opcodes: {frame.f_trace_opcodes}")
 
     print(
         (
@@ -270,6 +318,9 @@ def instruction_event_callback(
             f"{code_short(code)}, offset: *{instruction_offset}"
         )
     )
+
+    ### end code inside hook; `events_mask` should be set.
+
     return instruction_event_handler_return(tool_id, code, events_mask)
 
 
@@ -319,7 +370,7 @@ def leave_event_callback(
 
 
 def leave_event_handler_return(tool_id: int, frame: FrameType) -> object:
-    """Returning from a return or yield event handler"""
+    """Returning from a RETURN, YIELD, or PY_UNWIND event handler"""
     # Remove Set local events based on step type and breakpoints.
     if frame in FRAME_TRACKING:
         # print("WOOT - Deleting frame")
@@ -352,8 +403,14 @@ def set_callback_hooks_for_toolid(tool_id: int) -> dict:
         E.PY_RETURN: lambda code, instruction_offset, retval: leave_event_callback(
             tool_id, "return", code, instruction_offset, retval
         ),
+        E.PY_UNWIND: lambda code, instruction_offset, retval: exception_event_callback(
+            tool_id, "yield", code, instruction_offset, retval
+        ),
         E.PY_YIELD: lambda code, instruction_offset, retval: leave_event_callback(
             tool_id, "yield", code, instruction_offset, retval
+        ),
+        E.STOP_ITERATION: lambda code, instruction_offset, retval: exception_event_callback(
+            tool_id, "stop iteration", code, instruction_offset, retval
         ),
     }
 

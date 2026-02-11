@@ -7,11 +7,11 @@ from tracer.stepping import set_callback_hooks_for_toolid, set_step_into
 from tracer.sys_monitoring import E, mstart, mstop, start_local
 
 
-def stepping_simple_loop(arg: int, event_mask: int) -> int:
+def stepping_iter_loop(arg: int, event_mask: int) -> int:
     set_step_into(tool_id, sys._getframe(0), event_mask)
     x = arg
-    for i in range(2):
-        x += arg
+    for i in iter(range(2)):
+        x += i
     return x
 
 
@@ -26,10 +26,10 @@ print("=" * 40)
 start_local(
     hook_name,
     callback_hooks,
-    code=stepping_simple_loop.__code__,
+    code=stepping_iter_loop.__code__,
     events_set=E.LINE | E.STOP_ITERATION,
 )
-stepping_simple_loop(1, E.LINE | E.STOP_ITERATION)
+stepping_iter_loop(1, E.LINE | E.STOP_ITERATION)
 mstop(hook_name)
 
 # Next, step instructions
@@ -40,10 +40,10 @@ print("=" * 40)
 start_local(
     hook_name,
     callback_hooks,
-    code=stepping_simple_loop.__code__,
+    code=stepping_iter_loop.__code__,
     events_set=E.INSTRUCTION,
 )
-stepping_simple_loop(1, E.INSTRUCTION | E.STOP_ITERATION)
+stepping_iter_loop(1, E.INSTRUCTION | E.STOP_ITERATION)
 mstop(hook_name)
 
 # Finally, step both instructions and lines
@@ -56,8 +56,8 @@ print("=" * 40)
 start_local(
     hook_name,
     callback_hooks,
-    code=stepping_simple_loop.__code__,
+    code=stepping_iter_loop.__code__,
     events_set=E.INSTRUCTION | E.LINE,
 )
-stepping_simple_loop(1, E.INSTRUCTION | E.LINE)
+stepping_iter_loop(1, E.INSTRUCTION | E.LINE)
 mstop(hook_name)

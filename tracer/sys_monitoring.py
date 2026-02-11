@@ -331,7 +331,10 @@ def mstart(
 # Think about: we could return the uncleared event names in addition to the
 # event set. And/or a the list found and cleared.
 def mstop(
-    tool_name: str, events_set: Optional[Set[str]] = None, free_tool_id: bool = False
+    tool_name: str,
+    events_set: Optional[Set[str]] = None,
+    code: Optional[CodeType] = None,
+    free_tool_id: bool = False,
 ) -> Optional[int]:
     """Stop or unregister callback hooks in `tool_name` for events
     `events`. If events is None, then all events found under tool_name
@@ -364,6 +367,15 @@ def mstop(
     if (tool_id := find_hook_by_name(tool_name)) is None:
         return None
 
+    # Reset any local events in `code`.
+    if code is None:
+        frame = sys._getframe(1)
+        if frame is not None:
+            code = frame.f_code
+
+    if code is not None:
+        sys.monitoring.set_local_events(tool_id, code, 0)
+
     if events_set is None:
         sys.monitoring.set_events(tool_id, 0)
         return 0
@@ -391,15 +403,11 @@ def register_events(
 ):
     check_tool_id(tool_id)
 
-    set_events_fn = (
-        sys.monitoring.set_events
-        if is_global
-        else lambda tool_id, events: sys.monitoring.set_local_events(
-            tool_id, code, events
-        )
-    )
-
-    set_events_fn(tool_id, events_mask)
+    if is_global:
+        sys.monitoring.set_events(tool_id, events_mask)
+    else:
+        # TODO: Strip out global events and set those separately.
+        sys.monitoring.set_local_events(tool_id, code, events_mask)
 
 
 def register_tool_by_name(
@@ -513,7 +521,7 @@ if __name__ == "__main__":
     t.sort()
     print("EVENT2SHORT.keys() == ALL_EVENT_NAMES: %s" % (tuple(t) == ALL_EVENT_NAMES))
     trace_count = 100000
-    hook_name = "tracer.sys_monitoring"
+    tool_name = "tracer.sys_monitoring"
 
     import importlib
 
@@ -553,7 +561,7 @@ if __name__ == "__main__":
             trace_count -= 1
         else:
             print("Max line trace count reached - turning off monitoring")
-            mstop(hook_name, E.LINE)
+            mstop(tool_name, E.LINE)
             return sys.monitoring.DISABLE
         return sys.monitoring.DISABLE
 
@@ -589,7 +597,7 @@ if __name__ == "__main__":
         foo("bar")
 
     print(f"** Monitoring started before start(): {is_started(1)}")
-    tool_id, events_mask = mstart(hook_name, tool_id=1, ignore_filter=ignore_filter)
+    tool_id, events_mask = mstart(tool_name, tool_id=1, ignore_filter=ignore_filter)
     print(f"tool_id is {tool_id}, events_mask: {events_mask}")
 
     callback_hooks = {
@@ -597,25 +605,25 @@ if __name__ == "__main__":
         E.LINE: line_event_callback,
     }
 
-    add_trace_callbacks(hook_name, callback_hooks)
+    add_trace_callbacks(tool_name, callback_hooks)
     eval("1+2")
     foo()
 
-    mstop(hook_name)
+    mstop(tool_name)
     print(f"** Monitoring state after stopped: {is_started(tool_id)}")
     y = 5
-    tool_id, events_mask = start_local(hook_name)
+    tool_id, events_mask = start_local(tool_name)
     bar()
     z = 5
     for i in range(6):
         print(i)
     trace_count = 25
     print(f"** Monitoring started: {is_started(tool_id)}")
-    mstop(tool_id)
+    mstop(tool_name)
 
     # After adding event parameter to start()
     # print("** Monitoring only 'call' now...")
-    tool_id, events_mask = mstart(tool_name=hook_name, trace_callbacks=callback_hooks)
+    tool_id, events_mask = mstart(tool_name=tool_name, trace_callbacks=callback_hooks)
     print(f"tool_id {tool_id}, events_mask: {events_mask}")
     foo()
     bar()
