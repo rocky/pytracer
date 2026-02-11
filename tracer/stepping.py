@@ -366,7 +366,9 @@ def leave_event_callback(
 
     ### end code inside hook; `frame` should be set.
 
-    return leave_event_handler_return(tool_id, frame)
+    if event != "yield":
+        return leave_event_handler_return(tool_id, frame)
+    # Do we want to do something special for yield?
 
 
 def leave_event_handler_return(tool_id: int, frame: FrameType) -> object:
