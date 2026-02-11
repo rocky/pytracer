@@ -165,7 +165,7 @@ def line_event_callback(tool_id: int, code: CodeType, line_number: int) -> objec
 
     events_mask = sys.monitoring.get_local_events(tool_id, code)
 
-    # Below: 0 is us; 1 is our lambda, and 2 is the user code.
+    # Below: 0 is us; 1 is our closure lambda, and 2 is the user code.
     frame = sys._getframe(2)
     if frame.f_code != code:
         print("Woah -- code vs frame code mismatch in line event")
@@ -188,10 +188,12 @@ def line_event_callback(tool_id: int, code: CodeType, line_number: int) -> objec
 
     ### end code inside hook.
 
-    return line_event_handler_return(tool_id, code, events_mask)
+    return local_event_handler_return(tool_id, code, events_mask)
 
 
-def line_event_handler_return(tool_id: int, code: CodeType, events_mask: int) -> object:
+def local_event_handler_return(
+    tool_id: int, code: CodeType, events_mask: int
+) -> object:
     """A line event callback trace function"""
     sys.monitoring.set_local_events(tool_id, code, events_mask)
     return
@@ -218,7 +220,7 @@ def call_event_callback(
     # For testing, we don't want to change events_mask. Just note it.
     events_mask = sys.monitoring.get_local_events(tool_id, code)
 
-    # Below: 0 is us; 1 is our lambda, and 2 is the user code.
+    # Below: 0 is us; 1 is our closure lambda, and 2 is the user code.
     frame = sys._getframe(2)
     if frame.f_code != code:
         print("Woah -- code vs frame code mismatch in line event")
@@ -294,6 +296,37 @@ def exception_event_callback(
     return leave_event_handler_return(tool_id, frame)
 
 
+def goto_event_callback(
+    tool_id: int,
+    event: str,
+    code: CodeType,
+    instruction_offset: int,
+    destination_offset: int,
+) -> object:
+    """A JUMP or BRANCH (LEFT, RIGHT)event callback trace function"""
+
+    ### This is the code that gets run inside the hook, e.g. a debugger REPL.
+    ### The code inside the hook should set `events_mask`.
+
+    # For testing, we don't want to change events_mask. Just note it.
+    events_mask = sys.monitoring.get_local_events(tool_id, code)
+
+    # # Below: 0 is us; 1 is our closure lambda, and 2 is the user code.
+    # frame = sys._getframe(2)
+    # print(f"XXX FRAME: f_trace: {frame.f_trace}, f_trace_lines: {frame.f_trace_lines}, f_trace_opcodes: {frame.f_trace_opcodes}")
+
+    print(
+        (
+            f"\n{event.upper()}: tool id: {tool_id}, {bin(events_mask)} ({events_mask}) code:\n\t"
+            f"{code_short(code)}, offset: *{instruction_offset} to *{destination_offset}"
+        )
+    )
+
+    ### end code inside hook; `events_mask` should be set.
+
+    return local_event_handler_return(tool_id, code, events_mask)
+
+
 def instruction_event_callback(
     tool_id: int,
     event: str,
@@ -308,7 +341,7 @@ def instruction_event_callback(
     # For testing, we don't want to change events_mask. Just note it.
     events_mask = sys.monitoring.get_local_events(tool_id, code)
 
-    # # Below: 0 is us; 1 is our lambda, and 2 is the user code.
+    # # Below: 0 is us; 1 is our closure lambda, and 2 is the user code.
     # frame = sys._getframe(2)
     # print(f"XXX FRAME: f_trace: {frame.f_trace}, f_trace_lines: {frame.f_trace_lines}, f_trace_opcodes: {frame.f_trace_opcodes}")
 
@@ -321,16 +354,7 @@ def instruction_event_callback(
 
     ### end code inside hook; `events_mask` should be set.
 
-    return instruction_event_handler_return(tool_id, code, events_mask)
-
-
-def instruction_event_handler_return(
-    tool_id: int, code: CodeType, events_mask: int
-) -> object:
-    """Returning from a call event trace function"""
-    # Set local events based on step type and breakpoints.
-    sys.monitoring.set_local_events(tool_id, code, events_mask)
-    return
+    return local_event_handler_return(tool_id, code, events_mask)
 
 
 def leave_event_callback(
@@ -389,6 +413,16 @@ def leave_event_handler_return(tool_id: int, frame: FrameType) -> object:
 
 def set_callback_hooks_for_toolid(tool_id: int) -> dict:
     return {
+        E.BRANCH_LEFT: (
+            lambda code, instruction_offset, destination_offset: goto_event_callback(
+                tool_id, "branch left", code, instruction_offset, destination_offset
+            )
+        ),
+        E.BRANCH_RIGHT: (
+            lambda code, instruction_offset, destination_offset: goto_event_callback(
+                tool_id, "branch right", code, instruction_offset, destination_offset
+            )
+        ),
         E.CALL: (
             lambda code, instruction_offset, callable_obj, args: call_event_callback(
                 tool_id, "call", code, instruction_offset, callable_obj, args
@@ -397,6 +431,11 @@ def set_callback_hooks_for_toolid(tool_id: int) -> dict:
         E.INSTRUCTION: (
             lambda code, instruction_offset: instruction_event_callback(
                 tool_id, "instruction", code, instruction_offset
+            )
+        ),
+        E.JUMP: (
+            lambda code, instruction_offset, destination_offset: goto_event_callback(
+                tool_id, "jump", code, instruction_offset, destination_offset
             )
         ),
         E.LINE: (

@@ -20,16 +20,16 @@ tool_id, events_mask = mstart(hook_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
 
 # First step lines
-print("LINE EVENTS ONLY")
+print("LINE EVENTS and JUMPS")
 print("=" * 40)
 
 start_local(
     hook_name,
     callback_hooks,
     code=stepping_simple_loop.__code__,
-    events_set=E.LINE | E.STOP_ITERATION,
+    events_set=E.LINE | E.JUMP,
 )
-stepping_simple_loop(1, E.LINE | E.STOP_ITERATION)
+stepping_simple_loop(1, E.LINE | E.JUMP)
 mstop(hook_name)
 
 # Next, step instructions
