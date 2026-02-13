@@ -45,32 +45,37 @@ start_local(
 stepping_one_basic_block(1, granularity=StepGranularity.LINE_NUMBER, events_mask=E.LINE)
 mstop(tool_name)
 
-# # Next, step instructions
-# print("=" * 40)
-# print("INSTRUCTION EVENTS ONLY")
-# print("=" * 40)
+# Next, step instructions
+print("=" * 40)
+print("INSTRUCTION EVENTS ONLY")
+print("=" * 40)
 
-# start_local(
-#     tool_name,
-#     callback_hooks,
-#     code=stepping_one_basic_block.__code__,
-#     events_mask=E.INSTRUCTION,
-# )
-# stepping_one_basic_block(1, E.INSTRUCTION)
-# mstop(tool_name)
+start_local(
+    tool_name,
+    callback_hooks,
+    events_mask=E.INSTRUCTION,
+    step_type=StepType.STEP_OVER,
+)
+stepping_one_basic_block(
+    2, granularity=StepGranularity.INSTRUCTION, events_mask=E.INSTRUCTION
+)
+mstop(tool_name)
 
-# # Finally, step both instructions and lines
+# Finally, step both instructions and lines
 
-# print("=" * 40)
-# print("INSTRUCTION AND LINE EVENTS")
-# print("=" * 40)
+print("=" * 40)
+print("INSTRUCTION AND LINE EVENTS")
+print("=" * 40)
 
 
-# start_local(
-#     tool_name,
-#     callback_hooks,
-#     code=stepping_one_basic_block.__code__,
-#     events_mask=E.INSTRUCTION | E.LINE,
-# )
-# stepping_one_basic_block(1, E.INSTRUCTION | E.LINE)
-# mstop(tool_name)
+start_local(
+    tool_name,
+    callback_hooks,
+    events_mask=E.INSTRUCTION | E.LINE,
+)
+stepping_one_basic_block(
+    3,
+    granularity=StepType.STEP_OVER,
+    events_mask=E.INSTRUCTION | E.LINE,
+)
+mstop(tool_name)
