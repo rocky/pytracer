@@ -3,9 +3,10 @@ Stepping for a simple nested call involving a generator
 """
 import sys
 
-from tracer.stepping import (set_callback_hooks_for_toolid, set_step_into,
-                             set_step_over)
-from tracer.sys_monitoring import E, mstart, mstop, start_local
+from tracer.stepping import (StepGranularity, StepType,
+                             set_callback_hooks_for_toolid, set_step_into,
+                             set_step_over, start_local)
+from tracer.sys_monitoring import E, mstart, mstop
 
 
 def nested_function() -> int:
@@ -26,8 +27,8 @@ def step_over_simple_nested_call(x: list) -> int:
     return x
 
 
-hook_name = "09-step-simple-generator"
-tool_id, events_mask = mstart(hook_name, tool_id=1)
+tool_name = "09-step-simple-generator"
+tool_id, events_mask = mstart(tool_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
 
 # First, step try step into
@@ -35,13 +36,12 @@ print("STEP INTO NESTED FUNCTION")
 print("=" * 40)
 
 start_local(
-    hook_name,
+    tool_name,
     callback_hooks,
-    code=step_into_simple_nested_call.__code__,
-    events_set=E.CALL | E.LINE | E.PY_RETURN | E.PY_YIELD
+    events_mask=E.CALL | E.LINE | E.PY_RETURN | E.PY_YIELD
 )
 step_into_simple_nested_call(5)
-mstop(hook_name)
+mstop(tool_name)
 
 # Next, try step over
 print("=" * 40)
@@ -49,10 +49,9 @@ print("STEP OVER NESTED FUNCTION")
 print("=" * 40)
 
 start_local(
-    hook_name,
+    tool_name,
     callback_hooks,
-    code=step_over_simple_nested_call.__code__,
-    events_set=E.LINE,
+    events_mask=E.LINE,
 )
 step_over_simple_nested_call(6)
-mstop(hook_name)
+mstop(tool_name)

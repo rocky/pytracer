@@ -3,8 +3,10 @@ Stepping for simple try/except block.
 """
 import sys
 
-from tracer.stepping import set_callback_hooks_for_toolid, set_step_into
-from tracer.sys_monitoring import E, mstart, mstop, start_local
+from tracer.stepping import (StepGranularity, StepType,
+                             set_callback_hooks_for_toolid, set_step_into,
+                             start_local)
+from tracer.sys_monitoring import E, mstart, mstop
 
 
 def step_try_except(arg: list, event_mask: int) -> int:
@@ -16,8 +18,8 @@ def step_try_except(arg: list, event_mask: int) -> int:
     return 2
 
 
-hook_name = "stepping-try-except"
-tool_id, events_mask = mstart(hook_name, tool_id=1)
+tool_name = "stepping-try-except"
+tool_id, events_mask = mstart(tool_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
 
 # First step lines
@@ -25,13 +27,13 @@ print("LINE EVENTS ONLY")
 print("=" * 40)
 
 start_local(
-    hook_name,
+    tool_name,
     callback_hooks,
     code=step_try_except.__code__,
-    events_set=E.LINE,
+    events_mask=E.LINE,
 )
 step_try_except([], E.LINE)
-mstop(hook_name)
+mstop(tool_name)
 
 # Next, step instructions
 print("=" * 40)
@@ -39,13 +41,12 @@ print("INSTRUCTION EVENTS ONLY")
 print("=" * 40)
 
 start_local(
-    hook_name,
+    tool_name,
     callback_hooks,
-    code=step_try_except.__code__,
-    events_set=E.INSTRUCTION,
+    events_mask=E.INSTRUCTION,
 )
 step_try_except([], E.INSTRUCTION)
-mstop(hook_name)
+mstop(tool_name)
 
 # Finally, step both instructions and lines
 
@@ -55,10 +56,9 @@ print("=" * 40)
 
 
 start_local(
-    hook_name,
+    tool_name,
     callback_hooks,
-    code=step_try_except.__code__,
-    events_set=E.INSTRUCTION | E.LINE,
+    events_mask=E.INSTRUCTION | E.LINE,
 )
 step_try_except([], E.INSTRUCTION | E.LINE)
-mstop(hook_name)
+mstop(tool_name)
