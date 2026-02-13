@@ -123,46 +123,46 @@ def set_step_into(
     # Clear global events that are illegal for `set_local_events()`.
     events_mask &= ~GLOBAL_EVENTS
 
-    combined_event_set = (STEP_OUT_EVENTS | events_mask) | E.CALL | E.PY_START
+    combined_events_mask = (STEP_OUT_EVENTS | events_mask) | E.CALL | E.PY_START
 
     # Note step out is desired in FRAME_TRACKING so it can be
     # detected in the return portion of the callback handlers.
     FRAME_TRACKING[frame] = FrameInfo(
         step_type=StepType.STEP_INTO,
-        local_events_mask=combined_event_set,
+        local_events_mask=combined_events_mask,
         calls_to=None,
     )
 
     code = frame.f_code
-    sys.monitoring.set_local_events(tool_id, code, combined_event_set)
+    sys.monitoring.set_local_events(tool_id, code, combined_events_mask)
 
 
 def set_step_over(
-    tool_id: int, frame: FrameType, step_granularity: StepGranularity, event_set: int
+    tool_id: int, frame: FrameType, step_granularity: StepGranularity, events_mask: int
 ):
     """
     Set local callback for a `step over` in `code`.
-    `event_set` should have an event mask for local events line or
+    `events_mask` should have an event mask for local events line or
     various local instruction-type events (INSTRUCTION, JUMP, BRANCH_LEVEL,
     BRANCH_RIGHT, or STOP_ITERATION). It should *not* contain CALL.
     This will be masked out.
     """
     # Clear global events that are illegal for `set_local_events()`.
-    event_set &= ~GLOBAL_EVENTS
+    events_mask &= ~GLOBAL_EVENTS
 
-    combined_event_set = (STEP_OUT_EVENTS | event_set) & ~(E.CALL | E.PY_START)
+    combined_events_mask = (STEP_OUT_EVENTS | events_mask) & ~(E.CALL | E.PY_START)
 
     # Note step out is desired in FRAME_TRACKING so it can be
     # detected in the return portion of the callback handlers.
     FRAME_TRACKING[frame] = FrameInfo(
         step_type=StepType.STEP_OVER,
         step_granularity=None,
-        local_events_mask=combined_event_set,
+        local_events_mask=combined_events_mask,
         calls_to=None,
     )
 
     code = frame.f_code
-    sys.monitoring.set_local_events(tool_id, code, combined_event_set)
+    sys.monitoring.set_local_events(tool_id, code, combined_events_mask)
 
 
 def set_step_out(tool_id: int, frame: FrameType):
@@ -172,12 +172,12 @@ def set_step_out(tool_id: int, frame: FrameType):
 
     code = frame.f_code
     local_events_mask = sys.monitoring.get_local_events(tool_id, code)
-    combined_event_set = (STEP_OUT_EVENTS | local_events_mask) & ~E.CALL
+    combined_events_mask = (STEP_OUT_EVENTS | local_events_mask) & ~E.CALL
 
     FRAME_TRACKING[frame] = FrameInfo(
         step_type=StepType.STEP_OUT,
         step_granularity=None,
-        local_events_mask=combined_event_set,
+        local_events_mask=combined_events_mask,
         calls_to=None,
     )
 
@@ -460,7 +460,7 @@ def leave_event_handler_return(tool_id: int, frame: FrameType) -> object:
                 # Remove any local events
                 sys.monitoring.set_local_events(tool_id, code, 0)
             # else:
-            # What should we do here?
+            # FIXME: What should we do here for breakpoints?
             # # Do we need to remove this from CODE_TRACKING?
             # del CODE_TRACKING[tool_id, code]
 
@@ -625,7 +625,7 @@ def start_local(
         step_mask_granularity = (
             E.INSTRUCTION if step_granularity == StepGranularity.INSTRUCTION else E.LINE
         )
-        events_mask |= STEP_INTO_TRACKING | step_mask_granularity
+        events_mask |= (STEP_INTO_TRACKING | step_mask_granularity)
 
     FRAME_TRACKING[frame] = FrameInfo(
         step_type=step_type, step_granularity=step_granularity, calls_to=None

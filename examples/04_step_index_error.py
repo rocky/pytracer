@@ -28,6 +28,8 @@ start_local(
     tool_name,
     callback_hooks,
     events_mask=E.LINE,
+    step_type=StepType.STEP_INTO,
+    step_granularity=StepGranularity.LINE_NUMBER,
 )
 try:
     stepping_index_error([], E.LINE)
@@ -44,6 +46,8 @@ start_local(
     tool_name,
     callback_hooks,
     events_mask=E.INSTRUCTION,
+    step_type=StepType.STEP_INTO,
+    step_granularity=StepGranularity.INSTRUCTION,
 )
 try:
     stepping_index_error([], E.INSTRUCTION)
@@ -62,6 +66,8 @@ start_local(
     tool_name,
     callback_hooks,
     events_mask=E.INSTRUCTION | E.LINE,
+    step_type=StepType.STEP_INTO,
+    step_granularity=StepGranularity.INSTRUCTION,
 )
 try:
     stepping_index_error([], E.INSTRUCTION | E.LINE)

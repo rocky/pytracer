@@ -29,20 +29,22 @@ def stepping_simple_loop(
 tool_name = "02-stepping-single-loop"
 tool_id, events_mask = mstart(tool_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
-ignore_filter = TraceFilter([sys.monitoring, mstop])
+ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_into])
 
-# # First step lines
-# print("LINE EVENTS")
-# print("=" * 40)
+# First step lines
+print("LINE EVENTS")
+print("=" * 40)
 
-# start_local(
-#     tool_name,
-#     callback_hooks,
-#     events_mask=E.LINE,
-#     step_type=StepType.STEP_INTO,
-# )
-# stepping_simple_loop(1, E.LINE, StepGranularity.INSTRUCTION)
-# mstop(tool_name)
+start_local(
+    tool_name,
+    callback_hooks,
+    events_mask=E.LINE,
+    step_type=StepType.STEP_INTO,
+    step_granularity=StepGranularity.LINE_NUMBER,
+    ignore_filter=ignore_filter,
+)
+stepping_simple_loop(1, E.LINE, StepGranularity.INSTRUCTION)
+mstop(tool_name)
 
 # Next, step instructions
 print("=" * 40)
@@ -54,15 +56,16 @@ start_local(
     callback_hooks,
     events_mask=E.INSTRUCTION,
     step_type=StepType.STEP_INTO,
+    step_granularity=StepGranularity.INSTRUCTION,
     ignore_filter=ignore_filter,
 )
-stepping_simple_loop(1, E.INSTRUCTION | E.JUMP, StepGranularity.INSTRUCTION)
+stepping_simple_loop(1, E.INSTRUCTION, StepGranularity.INSTRUCTION)
 mstop(tool_name)
 
 # Finally, step both instructions and lines
 
 print("=" * 40)
-print("INSTRUCTION AND LINE EVENTS")
+print("INSTRUCTION, JUMP, AND LINE EVENTS")
 print("=" * 40)
 
 
@@ -70,6 +73,7 @@ start_local(
     tool_name,
     callback_hooks,
     events_mask=E.INSTRUCTION | E.LINE | E.JUMP,
+    ignore_filter=ignore_filter,
 )
 stepping_simple_loop(1, E.INSTRUCTION | E.LINE | E.JUMP, StepGranularity.INSTRUCTION)
 mstop(tool_name)

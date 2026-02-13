@@ -333,22 +333,10 @@ def mstart(
 # event set. And/or a the list found and cleared.
 def mstop(
     tool_name: str,
-    events_set: Optional[Set[str]] = None,
     code: Optional[CodeType] = None,
     free_tool_id: bool = False,
-) -> Optional[int]:
-    """Stop or unregister callback hooks in `tool_name` for events
-    `events`. If events is None, then all events found under tool_name
-    are removed. And if the event wasn't set previously, it is tacitly
-    ignored.
-
-    Note, the event set is given as a set of strings, not an encoded
-    event bitmask.  The strings used are not checked for validity, so
-    when an event name is and invalid name, that has no effect, and
-    no warning is given.
-
-    The new event mask in effect is returned encoded as a bitmask. If
-    None is returned, then tool_name was not found.
+):
+    """Stop or unregister callback hooks in `tool_name`
 
     If free_tool_id is False, MONITOR_HOOKS[tool_id] will still hold the
     dictionary of callback functions which can be enabled again later without
@@ -361,12 +349,14 @@ def mstop(
     monitor to use the tool id number.
 
     When free_tool_id is True, the event_set should be cover the entire
-    events set registered; or "events_set" should be None (which means
+    events set registered; or "events_mask" should be None (which means
     the same thing). Otherwise the free_tool_id parameter is ingored.
 
     """
     if (tool_id := find_hook_by_name(tool_name)) is None:
         return None
+
+    sys.monitoring.set_events(tool_id, 0)
 
     # Reset any local events in `code`.
     if code is None:
@@ -376,23 +366,7 @@ def mstop(
 
     if code is not None:
         sys.monitoring.set_local_events(tool_id, code, 0)
-
-    if events_set is None:
-        sys.monitoring.set_events(tool_id, 0)
-        return 0
-
-    # We have a tool id
-    trace_callbacks = MONITOR_HOOKS[tool_id]
-
-    new_event_mask = sys.monitoring.get_events(tool_id)
-
-    for event_id, trace_callback_func in trace_callbacks.items():
-        if event2string.get(event_id) in events_set:
-            new_event_mask = new_event_mask & ~event_id
-
-    print(f"events to clear {new_event_mask}")  # debug
-    sys.monitoring.set_events(tool_id, new_event_mask)
-    return new_event_mask
+    return
 
 
 # FIXME add optional event mask

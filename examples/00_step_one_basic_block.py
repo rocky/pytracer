@@ -41,6 +41,8 @@ start_local(
     callback_hooks,
     events_mask=E.LINE,
     step_type=StepType.STEP_OVER,
+    step_granularity=StepGranularity.LINE_NUMBER,
+    ignore_filter=ignore_filter,
 )
 stepping_one_basic_block(1, granularity=StepGranularity.LINE_NUMBER, events_mask=E.LINE)
 mstop(tool_name)
@@ -55,7 +57,9 @@ start_local(
     callback_hooks,
     events_mask=E.INSTRUCTION,
     step_type=StepType.STEP_OVER,
+    step_granularity=StepGranularity.INSTRUCTION,
     ignore_filter=ignore_filter,
+
 )
 stepping_one_basic_block(
     2, granularity=StepGranularity.INSTRUCTION, events_mask=E.INSTRUCTION
@@ -73,6 +77,8 @@ start_local(
     tool_name,
     callback_hooks,
     events_mask=E.INSTRUCTION | E.LINE,
+    step_type=StepType.STEP_OVER,
+    step_granularity=StepGranularity.INSTRUCTION,
     ignore_filter=ignore_filter,
 )
 stepping_one_basic_block(
