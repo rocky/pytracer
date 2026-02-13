@@ -493,31 +493,34 @@ def start_event_callback(
         print("Woah -- code vs frame code mismatch in line event")
 
     parent_frame = frame.f_back
+    step_type = StepType.NO_STEPPING
+    step_granularity = StepGranularity.LINE_NUMBER
     if parent_frame is None:
-        print("Woah -- parent frame is None; leaving...")
-        return
+        print("Woah -- parent frame is None.")
 
-    parent_frame_info = FRAME_TRACKING.get(parent_frame)
-    if parent_frame_info is None:
-        print(f"Woah -- parent frame {parent_frame} in FRAME_TRACKING is not set:\n{FRAME_TRACKING}\nleaving...")
-        return
+    else:
+        parent_frame_info = FRAME_TRACKING.get(parent_frame)
+        if parent_frame_info is None:
+            print(f"Woah -- parent frame {parent_frame} in FRAME_TRACKING is not set:\n{FRAME_TRACKING}\nleaving...")
+        else:
+            step_type = parent_frame_info.step_type
 
-    step_type = parent_frame_info.step_type
-    # Right now we don't allow debugger events or breakpoints on START.
-    # If we do someday, adjust the below
-    if step_type not in (StepType.STEP_INTO, StepType.NO_STEPPING):
-        print(
-            f"Expecting -- 'step into' or 'not stepping' in parent; is {parent_frame_info.step_type}"
-        )
-        return
+            # Right now we don't allow debugger events or breakpoints on START.
+            # If we do someday, adjust the below
+            if step_type not in (StepType.STEP_INTO, StepType.NO_STEPPING):
+                print(
+                    f"Expecting -- 'step into' or 'not stepping' in parent; is {parent_frame_info.step_type}"
+                )
+                return
 
-    # Note in the parent frame's frame_info a call to us. This assists
-    # in finding stale frames: frames that were were not removed from
-    # our tables on a RETURN or YIELD event, possibly because an
-    # exception skipped over them.
-    parent_frame_info.calls_to = frame
+            # Note in the parent frame's frame_info a call to us. This assists
+            # in finding stale frames: frames that were were not removed from
+            # our tables on a RETURN or YIELD event, possibly because an
+            # exception skipped over them.
+            parent_frame_info.calls_to = frame
 
-    step_granularity = parent_frame_info.step_granularity
+            step_granularity = parent_frame_info.step_granularity
+
     step_granularity_mask = (
         E.INSTRUCTION if step_granularity == StepGranularity.INSTRUCTION else E.LINE
     )
