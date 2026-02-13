@@ -264,7 +264,7 @@ def call_event_callback(
 
     frame_info = FRAME_TRACKING.get(frame)
     if frame_info is None:
-        print("Woah -- frame in FRAME_TRACKING is not set, leaving...")
+        print(f"Woah -- frame in FRAME_TRACKING is not set:\n{FRAME_TRACKING}\nleaving...")
         return
 
     step_type = frame_info.step_type
@@ -379,6 +379,10 @@ def instruction_event_callback(
 ) -> object:
     """A call event callback trace function"""
 
+    if (ignore_filter := sys_monitoring.MONITOR_FILTERS[tool_id]) is not None:
+        if ignore_filter.is_excluded(code):
+            return
+
     ### This is the code that gets run inside the hook, e.g. a debugger REPL.
     ### The code inside the hook should set `events_mask`.
 
@@ -469,8 +473,10 @@ def start_event_callback(
     instruction_offset: int,
 ) -> object:
     """A PY_START event callback trace function"""
-    # if ignore_filter.is_excluded(callable_obj) or ignore_filter.is_excluded(code):
-    #     return sys.monitoring.DISABLE
+
+    if (ignore_filter := sys_monitoring.MONITOR_FILTERS[tool_id]) is not None:
+        if ignore_filter.is_excluded(code):
+            return
 
     ### This is the code that gets run inside the hook, e.g. a debugger REPL.
     ### The code inside the hook should set:
@@ -493,15 +499,15 @@ def start_event_callback(
 
     parent_frame_info = FRAME_TRACKING.get(parent_frame)
     if parent_frame_info is None:
-        print("Woah -- parent frame FRAME_TRACKING set, leaving...")
+        print(f"Woah -- parent frame {parent_frame} in FRAME_TRACKING is not set:\n{FRAME_TRACKING}\nleaving...")
         return
 
     step_type = parent_frame_info.step_type
     # Right now we don't allow debugger events or breakpoints on START.
     # If we do someday, adjust the below
-    if step_type != StepType.STEP_INTO:
+    if step_type not in (StepType.STEP_INTO, StepType.NO_STEPPING):
         print(
-            f"Expecting -- 'step into' stepping in parent; is {parent_frame_info.step_type}"
+            f"Expecting -- 'step into' or 'not stepping' in parent; is {parent_frame_info.step_type}"
         )
         return
 
@@ -520,6 +526,9 @@ def start_event_callback(
     FRAME_TRACKING[frame] = FrameInfo(
         step_type, step_granularity, local_events_mask, None
     )
+
+    if step_type == StepType.NO_STEPPING:
+        return
 
     print(
         (

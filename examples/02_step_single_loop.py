@@ -8,6 +8,7 @@ from tracer.stepping import (StepGranularity, StepType,
                              set_callback_hooks_for_toolid, set_step_into,
                              start_local)
 from tracer.sys_monitoring import E, mstart, mstop
+from tracer.tracefilter import TraceFilter
 
 
 def stepping_simple_loop(
@@ -28,19 +29,20 @@ def stepping_simple_loop(
 tool_name = "02-stepping-single-loop"
 tool_id, events_mask = mstart(tool_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
+ignore_filter = TraceFilter([sys.monitoring, mstop])
 
-# First step lines
-print("LINE EVENTS")
-print("=" * 40)
+# # First step lines
+# print("LINE EVENTS")
+# print("=" * 40)
 
-start_local(
-    tool_name,
-    callback_hooks,
-    events_mask=E.LINE,
-    step_type=StepType.STEP_INTO,
-)
-stepping_simple_loop(1, E.LINE, StepGranularity.INSTRUCTION)
-mstop(tool_name)
+# start_local(
+#     tool_name,
+#     callback_hooks,
+#     events_mask=E.LINE,
+#     step_type=StepType.STEP_INTO,
+# )
+# stepping_simple_loop(1, E.LINE, StepGranularity.INSTRUCTION)
+# mstop(tool_name)
 
 # Next, step instructions
 print("=" * 40)
@@ -48,7 +50,11 @@ print("INSTRUCTION EVENTS ONLY")
 print("=" * 40)
 
 start_local(
-    tool_name, callback_hooks, events_mask=E.INSTRUCTION, step_type=StepType.STEP_INTO
+    tool_name,
+    callback_hooks,
+    events_mask=E.INSTRUCTION,
+    step_type=StepType.STEP_INTO,
+    ignore_filter=ignore_filter,
 )
 stepping_simple_loop(1, E.INSTRUCTION | E.JUMP, StepGranularity.INSTRUCTION)
 mstop(tool_name)

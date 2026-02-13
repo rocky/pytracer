@@ -29,7 +29,7 @@ def stepping_one_basic_block(
 tool_name = "00-stepping-one-basic-block"
 tool_id, events_mask = mstart(tool_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
-nignore_filter = TraceFilter([sys.monitoring, mstop])
+ignore_filter = TraceFilter([sys.monitoring, mstop])
 
 
 # First step lines
@@ -55,6 +55,7 @@ start_local(
     callback_hooks,
     events_mask=E.INSTRUCTION,
     step_type=StepType.STEP_OVER,
+    ignore_filter=ignore_filter,
 )
 stepping_one_basic_block(
     2, granularity=StepGranularity.INSTRUCTION, events_mask=E.INSTRUCTION
@@ -72,6 +73,7 @@ start_local(
     tool_name,
     callback_hooks,
     events_mask=E.INSTRUCTION | E.LINE,
+    ignore_filter=ignore_filter,
 )
 stepping_one_basic_block(
     3,
