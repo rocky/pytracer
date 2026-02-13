@@ -304,7 +304,7 @@ def mstart(
     tool_name: str,
     trace_callbacks: Optional[Dict[int, CodeType]] = None,
     tool_id: Optional[int] = None,
-    events_set: Optional[Set[str]] = None,
+    events_mask: Optional[int] = None,
     is_global: bool = True,
     code: Optional[CodeType] = None,
     ignore_filter=None,
@@ -322,9 +322,9 @@ def mstart(
             return tool_id, None
         pass
     if ignore_filter is not None:
-        MONITOR_HOOKS[tool_id] = ignore_filter
+        MONITOR_FILTERS[tool_id] = ignore_filter
     return tool_id, add_trace_callbacks(
-        tool_name, trace_callbacks, events_set, is_global, code
+        tool_name, trace_callbacks, events_mask, is_global, code
     )
 
 
@@ -487,33 +487,6 @@ def register_tool_by_name(
     return tool_id
 
 
-def start_local(
-    tool_name: str,
-    trace_callbacks: Optional[Dict[int, CodeType]] = None,
-    tool_id: Optional[int] = None,
-    code: Optional[CodeType] = None,
-    events_set: Optional[Set[str]] = None,
-    ignore_filter: Optional[CodeType] = None,
-) -> Tuple[int, int]:
-    """Start local event tracing. If trace_callbacks is None, we will
-    search for that and add it, if it's not already added.  If
-    `events_set` is None, the default, then all events are set.
-    `ignore_filter` lists code objects and modules that should be ignored.
-    """
-    if code is None:
-        code = sys._getframe(1).f_code
-    tool_id, event_mask = mstart(
-        tool_name=tool_name,
-        trace_callbacks=trace_callbacks,
-        tool_id=tool_id,
-        events_set=events_set,
-        is_global=False,
-        code=code,
-        ignore_filter=ignore_filter,
-    )
-    return tool_id, event_mask
-
-
 # Demo it
 if __name__ == "__main__":
 
@@ -610,9 +583,10 @@ if __name__ == "__main__":
     foo()
 
     mstop(tool_name)
+    print("=" * 40)
     print(f"** Monitoring state after stopped: {is_started(tool_id)}")
     y = 5
-    tool_id, events_mask = start_local(tool_name)
+    tool_id, events_mask = mstart(tool_name)
     bar()
     z = 5
     for i in range(6):
@@ -622,6 +596,7 @@ if __name__ == "__main__":
     mstop(tool_name)
 
     # After adding event parameter to start()
+    print("=" * 40)
     # print("** Monitoring only 'call' now...")
     tool_id, events_mask = mstart(tool_name=tool_name, trace_callbacks=callback_hooks)
     print(f"tool_id {tool_id}, events_mask: {events_mask}")
