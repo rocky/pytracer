@@ -6,10 +6,10 @@ import sys
 from dataclasses import dataclass
 from enum import Enum
 from types import CodeType, FrameType
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple
 
 import tracer.sys_monitoring as sys_monitoring
-from tracer.sys_monitoring import mstart
+from tracer.sys_monitoring import CODE_TRACKING, Location, mstart
 
 E = sys.monitoring.events
 
@@ -31,35 +31,6 @@ class StepGranularity(Enum):
     # Is there stuff like "RESUME" or at "safe" points
 
 
-class BreakpointTag(Enum):
-    LINE_NUMBER = "line number"
-    LINE_NUMBER_OFFSET = "line number and offset"
-    CODE_OFFSET = "instruction offset"
-
-
-@dataclass
-class LineNumberValue:
-    tag: BreakpointTag = BreakpointTag.LINE_NUMBER
-    line_number: int = -1
-
-
-@dataclass
-class LineNumberOffsetValue:
-    tag: BreakpointTag = BreakpointTag.LINE_NUMBER_OFFSET
-    line_number: int = -1
-    code_offset: int = -1
-
-
-@dataclass
-class CodeOffsetValue:
-    tag: BreakpointTag = BreakpointTag.CODE_OFFSET
-    code_offset: int = -1
-
-
-# The "Union" structure
-Location = Union[LineNumberValue, LineNumberOffsetValue, CodeOffsetValue]
-
-
 @dataclass
 class FrameInfo:
     step_type: StepType = StepType.NO_STEPPING
@@ -70,15 +41,6 @@ class FrameInfo:
 
 FRAME_TRACKING: Dict[FrameType, FrameInfo] = {}
 
-
-@dataclass
-class CodeInfo:
-    breakpoints = []
-    last_frame: Optional[FrameType] = None
-
-
-# We store breakpoints per tool id and code.
-CODE_TRACKING: Dict[Tuple[int, CodeType], CodeInfo] = {}
 
 # Event mask that should be use to callback on
 # finish or return from function, method or module.

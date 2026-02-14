@@ -34,8 +34,10 @@ behaves analogous to threading.settrace.
 
 import inspect
 import sys
-from types import CodeType
-from typing import Any, Callable, Dict, Optional, Set, Tuple
+from dataclasses import dataclass
+from enum import Enum
+from types import CodeType, FrameType
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 E = sys.monitoring.events
 
@@ -106,6 +108,46 @@ EVENT2SHORT = {
 ALL_EVENTS = frozenset(ALL_EVENT_NAMES)
 
 
+#############################
+## Breakpoint tracking
+#############################
+class BreakpointTag(Enum):
+    LINE_NUMBER = "line number"
+    LINE_NUMBER_OFFSET = "line number and offset"
+    CODE_OFFSET = "instruction offset"
+
+
+@dataclass
+class LineNumberValue:
+    tag: BreakpointTag = BreakpointTag.LINE_NUMBER
+    line_number: int = -1
+
+
+@dataclass
+class LineNumberOffsetValue:
+    tag: BreakpointTag = BreakpointTag.LINE_NUMBER_OFFSET
+    line_number: int = -1
+    code_offset: int = -1
+
+
+@dataclass
+class CodeOffsetValue:
+    tag: BreakpointTag = BreakpointTag.CODE_OFFSET
+    code_offset: int = -1
+
+
+# The "Union" structure
+Location = Union[LineNumberValue, LineNumberOffsetValue, CodeOffsetValue]
+
+@dataclass
+class CodeInfo:
+    breakpoints = []
+    last_frame: Optional[FrameType] = None
+
+
+# We store breakpoints per tool id and code.
+CODE_TRACKING: Dict[Tuple[int, CodeType], CodeInfo] = {}
+
 class FixedList:
     """
     A class fixed-length list.
@@ -134,6 +176,10 @@ class FixedList:
         return self._data.index(start)
 
 
+############################################
+## Additional information for tool ids
+############################################
+
 # A list of the registered hooks keyed by sys.monitoring.events.
 MONITOR_HOOKS = FixedList(None, MAX_TOOL_IDS)
 
@@ -160,6 +206,10 @@ for attr in dir(E):
             name = name[3:]
         event2string[val] = name
         eventname2int[name] = val
+
+############################################
+## Additional wrapping functions for tool_ids
+############################################
 
 
 class PytraceException(Exception):
@@ -264,6 +314,9 @@ def add_trace_callbacks(
 
     MONITOR_HOOKS[tool_id] = trace_callbacks
     register_events(tool_id, new_events_mask, is_global, code)
+    if code is not None and not is_global:
+        CODE_TRACKING[(tool_id, code)] = CodeInfo()
+
     return tool_id, new_events_mask
 
 
@@ -324,6 +377,7 @@ def mstart(
     if ignore_filter is not None:
         tool_id = find_hook_by_name(tool_name)
         MONITOR_FILTERS[tool_id] = ignore_filter
+
     return tool_id, add_trace_callbacks(
         tool_name, trace_callbacks, events_mask, is_global, code
     )
@@ -366,6 +420,9 @@ def mstop(
 
     if code is not None:
         sys.monitoring.set_local_events(tool_id, code, 0)
+
+    if (tool_id, code) in CODE_TRACKING:
+        del CODE_TRACKING[(tool_id, code)]
     return
 
 
