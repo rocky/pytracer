@@ -51,7 +51,7 @@ print("=" * 40)
 start_local(
     tool_name,
     callback_hooks,
-    events_mask=E.LINE,
+    events_mask=E.LINE | E.CALL | E.PY_RETURN | E.PY_START,
     step_type=StepType.STEP_INTO,
     step_granularity=StepGranularity.LINE_NUMBER,
     ignore_filter=ignore_filter,
@@ -67,7 +67,7 @@ print("=" * 40)
 start_local(
     tool_name,
     callback_hooks,
-    events_mask=E.LINE,
+    events_mask=E.LINE | E.CALL | E.PY_RETURN | E.PY_START,
     step_type=StepType.STEP_OVER,
     step_granularity=StepGranularity.LINE_NUMBER,
     ignore_filter=ignore_filter,

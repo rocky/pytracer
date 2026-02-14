@@ -65,7 +65,7 @@ class FrameInfo:
     step_type: StepType = StepType.NO_STEPPING
     step_granularity: Optional[StepGranularity] = None
     local_events_mask: int = 0
-    calls_to: Optional[FrameType] = None
+    calls_to: Optional[FrameType|CodeType] = None
 
 
 FRAME_TRACKING: Dict[FrameType, FrameInfo] = {}
@@ -150,7 +150,7 @@ def set_step_over(
     # Clear global events that are illegal for `set_local_events()`.
     events_mask &= ~GLOBAL_EVENTS
 
-    combined_events_mask = (STEP_OUT_EVENTS | events_mask) & ~(E.CALL | E.PY_START)
+    combined_events_mask = ((STEP_OUT_EVENTS | events_mask) | E.CALL) & ~E.PY_START
 
     # Note step out is desired in FRAME_TRACKING so it can be
     # detected in the return portion of the callback handlers.
@@ -172,7 +172,7 @@ def set_step_out(tool_id: int, frame: FrameType):
 
     code = frame.f_code
     local_events_mask = sys.monitoring.get_local_events(tool_id, code)
-    combined_events_mask = (STEP_OUT_EVENTS | local_events_mask) & ~E.CALL
+    combined_events_mask = (STEP_OUT_EVENTS | local_events_mask) & ~E.START
 
     FRAME_TRACKING[frame] = FrameInfo(
         step_type=StepType.STEP_OUT,
@@ -239,13 +239,13 @@ def call_event_callback(
     event: str,
     code: CodeType,
     instruction_offset: int,
-    callable_obj: CodeType,
+    code_to_call: CodeType,
     args,
 ) -> object:
     """A CALL event callback trace function"""
 
     if (ignore_filter := sys_monitoring.MONITOR_FILTERS[tool_id]) is not None:
-        if ignore_filter.is_excluded(callable_obj) or ignore_filter.is_excluded(code):
+        if ignore_filter.is_excluded(code_to_call) or ignore_filter.is_excluded(code):
             return
 
     ### This is the code that gets run inside the hook, e.g. a debugger REPL.
@@ -268,8 +268,23 @@ def call_event_callback(
         return
 
     step_type = frame_info.step_type
-
     step_granularity = frame_info.step_granularity
+
+    if child_code_info := CODE_TRACKING.get((tool_id, code_to_call), None) is not None:
+        # We've seen code_to_call, it may have a local event mask that we have
+        # to correct.
+        # Figure out the code's new events_mask.
+        print("XXXX: CODE_TRACKING")
+        if len(child_code_info.breakpoints) == 0:
+            if frame_info.steptype in (StepType.STEP_OVER, StepType.STEP_OUT):
+                # Clear out events mask in code that we are about to call.
+                events_mask_child = 0
+                pass
+        else:
+            events_mask_child = sys.monitoring.get_local_events(tool_id, code_to_call)
+            if frame_info.steptype in (StepType.STEP_OVER, StepType.STEP_OUT):
+                events_mask_child &= ~(STEP_INTO_TRACKING | E.LINE | E.INSTRUCTION)
+        sys.monitoring.set_local_events(tool_id, code_to_call, events_mask_child)
 
     print(
         (
@@ -280,16 +295,16 @@ def call_event_callback(
 
     ### end code inside hook. events_mask, frame and step_type should be set.
 
-    if hasattr(callable_obj, "__code__") and isinstance(
-        callable_obj.__code__, CodeType
+    if hasattr(code_to_call, "__code__") and isinstance(
+        code_to_call.__code__, CodeType
     ):
         return call_event_handler_return(
-            tool_id, callable_obj.__code__, events_mask, step_type
+            tool_id, code_to_call.__code__, events_mask, step_type
         )
 
 
 def call_event_handler_return(
-    tool_id: int, code: CodeType, events_mask: int, step_type: StepType
+        tool_id: int, code: CodeType, events_mask: int, step_type: StepType
 ) -> object:
     """Returning from a call event handler. We assume events_mask does not have
     any events that are not local events.
@@ -476,6 +491,7 @@ def start_event_callback(
 
     if (ignore_filter := sys_monitoring.MONITOR_FILTERS[tool_id]) is not None:
         if ignore_filter.is_excluded(code):
+            print("XXX2: code ignored")
             return
 
     ### This is the code that gets run inside the hook, e.g. a debugger REPL.
@@ -501,17 +517,9 @@ def start_event_callback(
     else:
         parent_frame_info = FRAME_TRACKING.get(parent_frame)
         if parent_frame_info is None:
-            print(f"Woah -- parent frame {parent_frame} in FRAME_TRACKING is not set:\n{FRAME_TRACKING}\nleaving...")
+            print(f"Woah -- parent frame {parent_frame} in FRAME_TRACKING is not set:\n{FRAME_TRACKING}")
         else:
             step_type = parent_frame_info.step_type
-
-            # Right now we don't allow debugger events or breakpoints on START.
-            # If we do someday, adjust the below
-            if step_type not in (StepType.STEP_INTO, StepType.NO_STEPPING):
-                print(
-                    f"Expecting -- 'step into' or 'not stepping' in parent; is {parent_frame_info.step_type}"
-                )
-                return
 
             # Note in the parent frame's frame_info a call to us. This assists
             # in finding stale frames: frames that were were not removed from
@@ -524,14 +532,15 @@ def start_event_callback(
     step_granularity_mask = (
         E.INSTRUCTION if step_granularity == StepGranularity.INSTRUCTION else E.LINE
     )
-    local_events_mask = events_mask | step_granularity_mask
+
+    if step_type == StepType.STEP_INTO:
+        local_events_mask = events_mask | step_granularity_mask
+    else:
+        local_events_mask = events_mask & ~step_granularity_mask
 
     FRAME_TRACKING[frame] = FrameInfo(
-        step_type, step_granularity, local_events_mask, None
+        step_type, step_granularity, local_events_mask, frame
     )
-
-    if step_type == StepType.NO_STEPPING:
-        return
 
     print(
         (
@@ -542,7 +551,7 @@ def start_event_callback(
 
     ### end code inside hook. events_mask, frame and step_type should be set.
 
-    return local_event_handler_return(tool_id, code, events_mask)
+    return local_event_handler_return(tool_id, code, local_events_mask)
 
 
 def set_callback_hooks_for_toolid(tool_id: int) -> dict:
@@ -565,8 +574,8 @@ def set_callback_hooks_for_toolid(tool_id: int) -> dict:
             )
         ),
         E.CALL: (
-            lambda code, instruction_offset, callable_obj, args: call_event_callback(
-                tool_id, "call", code, instruction_offset, callable_obj, args
+            lambda code, instruction_offset, code_to_call, args: call_event_callback(
+                tool_id, "call", code, instruction_offset, code_to_call, args
             )
         ),
         E.INSTRUCTION: (
