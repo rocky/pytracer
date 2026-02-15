@@ -9,7 +9,8 @@ from types import CodeType, FrameType
 from typing import Dict, Optional, Tuple
 
 import tracer.sys_monitoring as sys_monitoring
-from tracer.sys_monitoring import CODE_TRACKING, Location, mstart
+from tracer.breakpoint import CODE_TRACKING, Location
+from tracer.sys_monitoring import mstart
 
 E = sys.monitoring.events
 
