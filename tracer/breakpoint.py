@@ -61,3 +61,8 @@ class CodeInfo:
 
 # We store breakpoints per tool id and code.
 CODE_TRACKING: Dict[Tuple[int, CodeType], CodeInfo] = {}
+
+def set_breakpoint(tool_id: int, location: Location):
+    # TO BE COMPLETED...
+    # event_bitmask = sys.montoring.get_events(tool_id)
+    return
