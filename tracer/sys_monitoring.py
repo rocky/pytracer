@@ -139,6 +139,7 @@ class CodeOffsetValue:
 # The "Union" structure
 Location = Union[LineNumberValue, LineNumberOffsetValue, CodeOffsetValue]
 
+
 @dataclass
 class CodeInfo:
     breakpoints = []
@@ -147,6 +148,7 @@ class CodeInfo:
 
 # We store breakpoints per tool id and code.
 CODE_TRACKING: Dict[Tuple[int, CodeType], CodeInfo] = {}
+
 
 class FixedList:
     """
@@ -422,6 +424,12 @@ def mstop(
         sys.monitoring.set_local_events(tool_id, code, 0)
 
     if (tool_id, code) in CODE_TRACKING:
+        code_info = CODE_TRACKING[(tool_id, code)]
+        if len(code_info.breakpoints) != 0:
+            print(
+                f"Woah - breakpoints {code_info.breakpoints} should be empty"
+                f"on mstop:\n\t{code}"
+            )
         del CODE_TRACKING[(tool_id, code)]
     return
 

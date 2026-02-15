@@ -1,5 +1,5 @@
 """
-Stepping for a simple nested call involving a generator
+Stepping with a call which raises an exception
 """
 import sys
 
@@ -10,26 +10,31 @@ from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
 
 
-def nested_function() -> int:
-    yield 1
-    x = 1
-    yield x
+def double_nested_function(x: list) -> list:
+    # Raises an IndexError
+    return x[100]
+
+def nested_function(x: list) -> list:
+    return double_nested_function(x)
 
 
-def step_into_simple_nested_call(x: int) -> int:
+def step_into_nested_call(x: list) -> int:
     set_step_into(tool_id, sys._getframe(0), StepGranularity.LINE_NUMBER, E.LINE)
-    for i in nested_function():
-        x += i
-    return x
+    try:
+        return nested_function([1, 2, 3])
+    except IndexError:
+        return 4
 
-def step_over_simple_nested_call(x: list) -> int:
+
+def step_over_nested_call(x: list) -> int:
     set_step_over(tool_id, sys._getframe(0), StepGranularity.LINE_NUMBER, E.LINE)
-    for i in nested_function():
-        x += i
-    return x
+    try:
+        return nested_function([7, 8, 9])
+    except IndexError:
+        return 5
 
 
-tool_name = "09-step-simple-generator"
+tool_name = "12-double-call-with-exception"
 tool_id, events_mask = mstart(tool_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
 ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_into, set_step_over])
@@ -41,12 +46,12 @@ print("=" * 40)
 start_local(
     tool_name,
     callback_hooks,
-    events_mask=E.LINE | E.PY_RETURN | E.PY_START,
+    events_mask=E.LINE | E.CALL | E.PY_RETURN | E.PY_START,
     step_type=StepType.STEP_INTO,
     step_granularity=StepGranularity.LINE_NUMBER,
     ignore_filter=ignore_filter,
 )
-step_into_simple_nested_call(5)
+step_into_nested_call([1,2,3])
 mstop(tool_name)
 
 # Next, try step over
@@ -57,10 +62,10 @@ print("=" * 40)
 start_local(
     tool_name,
     callback_hooks,
-    events_mask=E.LINE | E.PY_RETURN | E.PY_START,
+    events_mask=E.LINE | E.CALL | E.PY_RETURN | E.PY_START,
     step_type=StepType.STEP_OVER,
     step_granularity=StepGranularity.LINE_NUMBER,
     ignore_filter=ignore_filter,
 )
-step_over_simple_nested_call(6)
+step_over_nested_call([4,5,6])
 mstop(tool_name)

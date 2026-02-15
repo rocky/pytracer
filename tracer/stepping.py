@@ -276,7 +276,11 @@ def call_event_handler_return(
         # FIXME: it would be better to attach it to the particular *frame*
         # that will be called.
         sys.monitoring.set_local_events(tool_id, code, events_mask)
-
+        if events_mask == 0 and (code_info := CODE_TRACKING.get(tool_id, code)) is not None:
+            if len(code_info.breakpoints) == 0:
+                del CODE_TRACKING[tool_id, code]
+            else:
+                print(f"Woah - removed event mask short_code{code} with {code_info.breakpoints}")
     return
 
 
