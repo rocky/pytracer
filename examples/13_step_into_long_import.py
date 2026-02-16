@@ -17,7 +17,7 @@ def step_over_long_import():
     print(len(dir(mathics)))
 
 
-tool_name = "12-step-into-long_import"
+tool_name = "13-step-into-long_import"
 tool_id, events_mask = mstart(tool_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
 ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_into])

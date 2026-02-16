@@ -59,6 +59,28 @@ STEP_OUT_EVENTS = E.PY_YIELD | E.PY_RETURN
 STEP_OVER_EVENTS = STEP_OUT_EVENTS
 
 
+def clear_stale_frames(tool_id: int, frame: FrameInfo):
+    while frame is not None:
+        frame_info = FRAME_TRACKING.get(frame)
+        if frame_info is None:
+            return
+        calls_to_frame = frame_info.calls_to
+        if calls_to_frame is None:
+            return
+        code = calls_to_frame.f_code
+        # FIXME: reinstate the above. code_info is somehow come out as a code type.
+        # if (((code_info := CODE_TRACKING.get(tool_id, code)) is None) or
+        #     len(code_info.breakpoints) == 0):
+        #     print("XXX3")
+        #     events_mask = sys.monitoring.get_local_events(tool_id, code)
+        #     events_mask &= ~(STEP_OUT_FILTER_MASK)
+        #     sys.monitoring.set_local_events(tool_id, code, events_mask)
+        events_mask = sys.monitoring.get_local_events(tool_id, code)
+        events_mask &= ~(STEP_OUT_FILTER_MASK)
+        sys.monitoring.set_local_events(tool_id, code, events_mask)
+        del FRAME_TRACKING[frame]
+        frame = calls_to_frame
+
 def code_short(code: CodeType) -> str:
     import os.path as osp
 
@@ -94,9 +116,7 @@ def set_step_into(
     # Note that all "~" operations should be done before any "|" operations.
     events_mask &= ~GLOBAL_EVENTS
 
-    combined_events_mask = (
-        (STEP_OUT_EVENTS | events_mask) | E.CALL | E.PY_START
-    )
+    combined_events_mask = STEP_OUT_EVENTS | events_mask | E.CALL | E.PY_START
 
     # Note step out is desired in FRAME_TRACKING so it can be
     # detected in the return portion of the callback handlers.
@@ -158,12 +178,7 @@ def set_step_over(
     # Note that all "~" operations should be done before any "|" operations.
     events_mask &= ~GLOBAL_EVENTS
 
-    # THINK ABOUT: Do we really care about PY_START? Clear it anyway.
-    # TODO: If we can be sure there is not stale code (stale frames) that were
-    # skipped over by execptions, we don't need to trace into E.CALL to check for this.
-    events_mask &= ~E.PY_START
-
-    combined_events_mask = ((STEP_OUT_EVENTS | events_mask) | E.CALL)
+    combined_events_mask = STEP_OUT_EVENTS | events_mask | E.CALL | E.PY_START
 
     # Note step out is desired in FRAME_TRACKING so it can be
     # detected in the return portion of the callback handlers.
@@ -208,8 +223,11 @@ def line_event_callback(tool_id: int, code: CodeType, line_number: int) -> objec
                 f"\nLINE: tool id: {tool_id}, {bin(events_mask)} ({events_mask}) {step_type} {frame_info.step_granularity} code:"
                 f"\n\t{code_short(code)}, line: {line_number}"
             )
+        if frame_info.calls_to is not None:
+            clear_stale_frames(tool_id, frame_info.calls_to)
+            frame_info.calls_to = None
 
-    ### end code inside hook.
+    ### end code inside hook; `events_mask` should be set.
 
     return local_event_handler_return(tool_id, code, events_mask)
 
@@ -414,6 +432,13 @@ def instruction_event_callback(
         )
     )
 
+    frame = sys._getframe(2)
+    frame_info = FRAME_TRACKING.get(frame, None)
+    if frame_info is not None and frame_info.calls_to is not None:
+        clear_stale_frames(tool_id, frame_info.calls_to)
+        frame_info.calls_to = None
+
+
     ### end code inside hook; `events_mask` should be set.
 
     return local_event_handler_return(tool_id, code, events_mask)
@@ -426,7 +451,7 @@ def leave_event_callback(
     instruction_offset: int,
     return_value: object,
 ):
-    """A Return and Yield event callback trace function"""
+    """A PY_RETURN and PY_YIELD event callback trace function"""
 
     ### This is the code that gets run inside the hook, e.g. a debugger REPL.
     ### The code inside the hook should set:
@@ -490,7 +515,6 @@ def start_event_callback(
 
     if (ignore_filter := sys_monitoring.MONITOR_FILTERS[tool_id]) is not None:
         if ignore_filter.is_excluded(code):
-            print("XXX2: code ignored")
             return
 
     ### This is the code that gets run inside the hook, e.g. a debugger REPL.
@@ -500,59 +524,68 @@ def start_event_callback(
     # * step_type
 
     # For testing, we don't want to change events_mask. Just note it.
-    events_mask = sys.monitoring.get_local_events(tool_id, code)
+    local_events_mask = sys.monitoring.get_local_events(tool_id, code)
 
     # Below: 0 is us; 1 is our closure lambda, and 2 is the user code.
     frame = sys._getframe(2)
     if frame.f_code != code:
         print("Woah -- code vs frame code mismatch in line event")
 
-    parent_frame = frame.f_back
+    frame_with_frame_info = frame.f_back
     step_type = StepType.NO_STEPPING
     step_granularity = StepGranularity.LINE_NUMBER
-    if parent_frame is None:
-        print("Woah -- parent frame is None.")
-
+    calls_to = [frame]
+    while frame_with_frame_info is not None:
+        frame_info = FRAME_TRACKING.get(frame_with_frame_info)
+        if frame_info is not None:
+            step_type = frame_info.step_type
+            step_granularity = frame_info.step_granularity
+            local_events_mask = frame_info.local_events_mask
+            break
+        frame_with_frame_info = frame_with_frame_info.f_back
+        calls_to.append(frame_with_frame_info)
     else:
-        parent_frame_info = FRAME_TRACKING.get(parent_frame)
-        if parent_frame_info is None:
-            print(
-                f"Woah -- parent frame {parent_frame} in FRAME_TRACKING is not set:\n{FRAME_TRACKING}"
+        print(
+            f"Woah -- can't find frame in FRAME_TRACKING with step frame_info:\n{FRAME_TRACKING}"
             )
+
+    while calls_to:
+        call_to_frame = calls_to.pop()
+        if (frame_info := FRAME_TRACKING.get(frame_with_frame_info)) is None:
+            FRAME_TRACKING[frame_with_frame_info] = FrameInfo(
+                step_type=step_type,
+                step_granularity = step_granularity,
+                local_events_mask = local_events_mask,
+                calls_to = call_to_frame
+                )
+            frame_with_frame_info = call_to_frame
         else:
-            step_type = parent_frame_info.step_type
-
-            # Note in the parent frame's frame_info a call to us. This assists
-            # in finding stale frames: frames that were were not removed from
-            # our tables on a RETURN or YIELD event, possibly because an
-            # exception skipped over them.
-            parent_frame_info.calls_to = frame
-
-            step_granularity = parent_frame_info.step_granularity
+            frame_info.calls_to = call_to_frame
 
     step_granularity_mask = (
         E.INSTRUCTION if step_granularity == StepGranularity.INSTRUCTION else E.LINE
     )
 
     if step_type == StepType.STEP_INTO:
-        local_events_mask = events_mask | step_granularity_mask
+        combined_events_mask = local_events_mask | step_granularity_mask
     else:
-        local_events_mask = events_mask & ~step_granularity_mask
+        combined_events_mask = local_events_mask & ~step_granularity_mask
 
     FRAME_TRACKING[frame] = FrameInfo(
-        step_type, step_granularity, local_events_mask, frame
+        step_type, step_granularity, combined_events_mask, None
     )
 
     print(
         (
-            f"\nSTART: tool id: {tool_id}, {bin(events_mask)} ({events_mask}) {step_type} code:\n\t"
+            f"\nSTART: tool id: {tool_id}, {bin(combined_events_mask)} "
+            f"({combined_events_mask}) {step_type} code:\n\t"
             f"{code_short(code)}, offset: *{instruction_offset}"
         )
     )
 
     ### end code inside hook. events_mask, frame and step_type should be set.
 
-    return local_event_handler_return(tool_id, code, local_events_mask)
+    return local_event_handler_return(tool_id, code, combined_events_mask)
 
 
 def set_callback_hooks_for_toolid(tool_id: int) -> dict:
