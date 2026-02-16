@@ -18,8 +18,8 @@ E = sys.monitoring.events
 GLOBAL_EVENTS = E.C_RAISE | E.C_RETURN | E.PY_UNWIND | E.RAISE
 STEP_INTO_TRACKING = E.CALL | E.PY_START | E.PY_RETURN
 
-# Mask to use for "step out". Use with & ^(STEP_OUT_FILTER_MASK)
-STEP_OUT_FILTER_MASK = (
+# Mask to use for "step out". Use with & ^(INSTRUCTION_LIKE_EVENTS)
+INSTRUCTION_LIKE_EVENTS = (
     E.LINE | E.INSTRUCTION | E.JUMP | E.BRANCH_LEFT | E.BRANCH_RIGHT | E.STOP_ITERATION
 )
 
@@ -73,16 +73,17 @@ def clear_stale_frames(tool_id: int, frame: FrameInfo):
         #     len(code_info.breakpoints) == 0):
         #     print("XXX3")
         #     events_mask = sys.monitoring.get_local_events(tool_id, code)
-        #     events_mask &= ~(STEP_OUT_FILTER_MASK)
+        #     events_mask &= ~(INSTRUCTION_LIKE_EVENTS)
         #     sys.monitoring.set_local_events(tool_id, code, events_mask)
         events_mask = sys.monitoring.get_local_events(tool_id, code)
-        events_mask &= ~(STEP_OUT_FILTER_MASK)
+        events_mask &= ~(INSTRUCTION_LIKE_EVENTS)
+        events_mask &= ~E.LINE
         sys.monitoring.set_local_events(tool_id, code, events_mask)
         del FRAME_TRACKING[frame]
         frame = calls_to_frame
 
 
-def refresh_code_mask(tool_id: int, frame: FrameInfo) -> int:
+def refresh_code_mask(tool_id: int, frame: FrameInfo) -> Tuple[int, int]:
     """Refresh the local_events_mask recording in sys.montoring for
     the code object found in `frame` to the value found via FrameInfo.
 
@@ -94,7 +95,7 @@ def refresh_code_mask(tool_id: int, frame: FrameInfo) -> int:
     saved in FRAME_TRACKING at the time of the call.
     """
     code = frame.f_code
-    events_mask = sys.monitoring.get_local_events(tool_id, code)
+    new_events_mask = events_mask = sys.monitoring.get_local_events(tool_id, code)
 
     if (
         frame_info := FRAME_TRACKING.get(frame)
@@ -105,9 +106,9 @@ def refresh_code_mask(tool_id: int, frame: FrameInfo) -> int:
         sys.monitoring.set_local_events(
             tool_id, frame.f_code, frame_info.local_events_mask
         )
-        events_mask = frame_info.local_events_mask
+        new_events_mask = frame_info.local_events_mask
 
-    return events_mask
+    return events_mask, new_events_mask
 
 
 def code_short(code: CodeType) -> str:
@@ -175,7 +176,7 @@ def set_step_out(tool_id: int, frame: FrameType):
 
     # Note that all "~" operations should be done before any "|" operations.
     events_mask = sys.monitoring.get_local_events(tool_id, code) & ~(
-        STEP_OUT_FILTER_MASK
+        INSTRUCTION_LIKE_EVENTS
     )
 
     # THINK ABOUT: Do we really care about PY_START? Clear it anyway.
@@ -235,29 +236,46 @@ def line_event_callback(tool_id: int, code: CodeType, line_number: int) -> objec
     if frame.f_code != code:
         print("Woah -- code vs frame code mismatch in line event")
 
-    events_mask = refresh_code_mask(tool_id, frame)
+    orig_events_mask, events_mask = refresh_code_mask(tool_id, frame)
+    if (events_mask & E.LINE) == 0:
+        print("Woah - the reset local events mask should include a line event")
+        events_mask |= E.LINE
+
+    if (orig_events_mask & E.LINE) == 0:
+        print("Woah - the original events mask (before reset) did not contain a line event")
 
     if (ignore_filter := sys_monitoring.MONITOR_FILTERS[tool_id]) is not None:
         if ignore_filter.is_excluded(code):
             return
 
-    ### This is the code that gets run inside the hook, e.g. a debugger REPL.
-    ### The code inside the hook should set:
-
-    # print(f"XXX FRAME: f_trace: {frame.f_trace}, f_trace_lines: {frame.f_trace_lines}, f_trace_opcodes: {frame.f_trace_opcodes}")
-
     frame_info = FRAME_TRACKING.get(frame, None)
+    step_type = None
     if frame_info is not None:
-        if (step_type := frame_info.step_type) is None:
-            print(f"XXX This should not happen - first time for {frame}")
-        else:
-            print(
-                f"\nLINE: tool id: {tool_id}, {bin(events_mask)} ({events_mask}) {step_type} {frame_info.step_granularity} code:"
-                f"\n\t{code_short(code)}, line: {line_number}"
-            )
+        step_type = frame_info.step_type
+        step_granularity = frame_info.step_granularity
+
+        # THINK ABOUT: How can this happen? Could we make it an assert?
+        if step_type not in (StepType.STEP_INTO, StepType.STEP_OVER):
+            return
+
         if frame_info.calls_to is not None:
             clear_stale_frames(tool_id, frame_info.calls_to)
             frame_info.calls_to = None
+            pass
+        pass
+
+
+    ### This is the code that gets run inside the hook, e.g. a debugger REPL.
+    ### The code inside the hook should set:
+
+    if step_type is None:
+        step_type = StepType.NO_STEPPING
+        step_granularity = StepGranularity.LINE_NUMBER
+
+    print(
+        f"\nLINE: tool id: {tool_id}, {bin(events_mask)} ({events_mask}) {step_type} {step_granularity} code:"
+        f"\n\t{code_short(code)}, line: {line_number}"
+        )
 
     ### end code inside hook; `events_mask` should be set.
 
@@ -445,8 +463,18 @@ def instruction_event_callback(
 
     # Below: 0 is us; 1 is our closure lambda, and 2 is the user code.
     frame = sys._getframe(2)
-    events_mask = refresh_code_mask(tool_id, frame)
+    orig_events_mask, events_mask = refresh_code_mask(tool_id, frame)
 
+    if (events_mask & INSTRUCTION_LIKE_EVENTS) == 0:
+        print("Woah - the reset events mask should include a instruction-like event")
+        events_mask |= E.INSTRUCTION
+
+    if (orig_events_mask & INSTRUCTION_LIKE_EVENTS) == 0:
+        print("Woah - original local events mask (before reset) did not contain a instruction-like event")
+
+    if (ignore_filter := sys_monitoring.MONITOR_FILTERS[tool_id]) is not None:
+        if ignore_filter.is_excluded(code):
+            return
     frame_info = FRAME_TRACKING.get(frame, None)
     if frame_info is not None and frame_info.calls_to is not None:
         clear_stale_frames(tool_id, frame_info.calls_to)
