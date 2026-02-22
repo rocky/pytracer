@@ -233,6 +233,8 @@ def add_trace_callbacks(
 
     A check is made on each trace function trace_callbacks to make
     sure it is a function.
+
+    If `is_global` is False (set local events), then `code` should not be None.
     """
 
     if events_mask is None:
@@ -404,6 +406,12 @@ def register_events(
     is_global: bool = True,
     code: Optional[CodeType] = None,
 ):
+    """
+    A wrapper around sys.monitoring.set_events if `is_global` is True,
+    or sys.monitoring.set_local_events if `is_global` is False.
+
+    If `is_global` is False (set local events), then `code` should not be None.
+    """
     check_tool_id(tool_id)
 
     if is_global:
