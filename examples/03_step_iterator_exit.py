@@ -1,19 +1,20 @@
 """
 Stepping for line and instruction events of a simple loop.
 """
+
 import sys
 
-from tracer.stepping import (StepGranularity, StepType,
-                             set_callback_hooks_for_toolid, set_step_into,
+from tracer.callbacks import set_callback_hooks_for_toolid
+from tracer.stepping import (StepGranularity, StepType, set_step_into,
                              start_local)
 from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
 
 
 def stepping_iter_loop(arg: int, events_mask: int, granularity: StepGranularity) -> int:
-    set_step_into(tool_id, sys._getframe(0),
-                  granularity=granularity,
-                  events_mask=events_mask)
+    set_step_into(
+        tool_id, sys._getframe(0), granularity=granularity, events_mask=events_mask
+    )
     x = arg
     for i in iter(range(2)):
         x += i

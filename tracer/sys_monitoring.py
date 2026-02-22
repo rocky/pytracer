@@ -193,6 +193,15 @@ def null_trace_hook(*args, **kwargs):
     pass
 
 
+def find_free_hook_id() -> Optional[int]:
+    """Find the first tool id, or return None if all tools are used."""
+    for i, tool_name_entry in enumerate(TOOL_NAME):
+        if tool_name_entry is None and sys.monitoring.get_tool(i) is None:
+            return i
+        pass
+    return None
+
+
 def find_hook_by_name(tool_name: str) -> Optional[int]:
     """Find tool id when given a tool name or return None if it is not found."""
     try:
@@ -230,17 +239,13 @@ def add_trace_callbacks(
         events_mask = 0xFFFF
 
     if (tool_id := find_hook_by_name(tool_name)) is None:
-        for i, tool_name_entry in enumerate(TOOL_NAME):
-            if tool_name_entry is None and sys.monitoring.get_tool(i) is None:
-                tool_id = i
-                break
-        else:
+        if (tool_id := find_free_hook_id()) is None:
             print(f"all {MAX_TOOL_IDS} hooks are in use")
             return None, None
 
         # FIXME check for TOOL_NAME all full.
         TOOL_NAME[tool_id] = tool_name
-        if (old_tool := sys.monitoring.get_tool(i)) is None:
+        if (old_tool := sys.monitoring.get_tool(tool_id)) is None:
             sys.monitoring.use_tool_id(tool_id, tool_name)
         else:
             if trace_callbacks is not None and old_tool != tool_name:

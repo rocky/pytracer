@@ -1,10 +1,11 @@
 """
 Stepping for a simple nested call involving a generator
 """
+
 import sys
 
-from tracer.stepping import (StepGranularity, StepType,
-                             set_callback_hooks_for_toolid, set_step_into,
+from tracer.callbacks import set_callback_hooks_for_toolid
+from tracer.stepping import (StepGranularity, StepType, set_step_into,
                              set_step_over, start_local)
 from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
@@ -21,6 +22,7 @@ def step_into_simple_nested_call(x: int) -> int:
     for i in nested_function():
         x += i
     return x
+
 
 def step_over_simple_nested_call(x: list) -> int:
     set_step_over(tool_id, sys._getframe(0), StepGranularity.LINE_NUMBER, E.LINE)

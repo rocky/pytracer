@@ -1,10 +1,11 @@
 """
 Stepping with a call which raises an exception
 """
+
 import sys
 
-from tracer.stepping import (StepGranularity, StepType,
-                             set_callback_hooks_for_toolid, set_step_into,
+from tracer.callbacks import set_callback_hooks_for_toolid
+from tracer.stepping import (StepGranularity, StepType, set_step_into,
                              set_step_over, start_local)
 from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
@@ -13,6 +14,7 @@ from tracer.tracefilter import TraceFilter
 def double_nested_function(x: list) -> list:
     # Raises an IndexError
     return x[100]
+
 
 def nested_function(x: list) -> list:
     return double_nested_function(x)
@@ -51,7 +53,7 @@ start_local(
     step_granularity=StepGranularity.LINE_NUMBER,
     ignore_filter=ignore_filter,
 )
-step_into_nested_call([1,2,3])
+step_into_nested_call([1, 2, 3])
 mstop(tool_name)
 
 # Next, try step over
@@ -67,5 +69,5 @@ start_local(
     step_granularity=StepGranularity.LINE_NUMBER,
     ignore_filter=ignore_filter,
 )
-step_over_nested_call([4,5,6])
+step_over_nested_call([4, 5, 6])
 mstop(tool_name)

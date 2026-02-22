@@ -4,8 +4,8 @@
 
 import sys
 
-from tracer.stepping import (StepGranularity, StepType,
-                             set_callback_hooks_for_toolid, set_step_out,
+from tracer.callbacks import set_callback_hooks_for_toolid
+from tracer.stepping import (StepGranularity, StepType, set_step_out,
                              start_local)
 from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
@@ -53,9 +53,7 @@ start_local(
     step_granularity=StepGranularity.INSTRUCTION,
     ignore_filter=ignore_filter,
 )
-step_try_except(
-    [], granularity=StepGranularity.INSTRUCTION, events_mask=E.INSTRUCTION
-)
+step_try_except([], granularity=StepGranularity.INSTRUCTION, events_mask=E.INSTRUCTION)
 mstop(tool_name)
 
 # Finally, step both instructions and lines

@@ -1,11 +1,12 @@
 """
 Trace stepping over a long import.
 """
+
 import sys
 import timeit
 
-from tracer.stepping import (StepGranularity, StepType,
-                             set_callback_hooks_for_toolid, set_step_into,
+from tracer.callbacks import set_callback_hooks_for_toolid
+from tracer.stepping import (StepGranularity, StepType, set_step_into,
                              start_local)
 from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
@@ -14,6 +15,7 @@ from tracer.tracefilter import TraceFilter
 def step_over_long_import():
     set_step_into(tool_id, sys._getframe(0), StepGranularity.LINE_NUMBER, E.LINE)
     import mathics
+
     print(len(dir(mathics)))
 
 
@@ -34,6 +36,6 @@ start_local(
     step_granularity=StepGranularity.LINE_NUMBER,
     ignore_filter=ignore_filter,
 )
-execution_time=timeit.timeit(step_over_long_import, number=1)
+execution_time = timeit.timeit(step_over_long_import, number=1)
 mstop(tool_name)
 print(f"Execution time: {execution_time} seconds")
