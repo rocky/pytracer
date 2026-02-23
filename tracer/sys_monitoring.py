@@ -335,6 +335,14 @@ def mstart(
     not already added.
     """
 
+    if (found_tool_id := find_hook_by_name(tool_name)) is not None:
+        if tool_id is not None:
+            if tool_id != found_tool_id:
+                print(f"Warning: name {tool_name} found under "
+                      f"{found_tool_id} not {tool_id}. Using {found_tool_id}"
+                      )
+        tool_id = found_tool_id
+
     if trace_callbacks is None:
         tool_id = register_tool_by_name(tool_name, tool_id)
         trace_callbacks = MONITOR_HOOKS[tool_id]
@@ -343,7 +351,6 @@ def mstart(
         pass
     if ignore_filter is not None:
         tool_id = find_hook_by_name(tool_name)
-        MONITOR_FILTERS[tool_id] = ignore_filter
 
     return tool_id, add_trace_callbacks(
         tool_name, trace_callbacks, events_mask, is_global, code
@@ -396,6 +403,8 @@ def mstop(
                 f"on mstop:\n\t{code}"
             )
         del CODE_TRACKING[(tool_id, code)]
+    # Leave MONITOR_HOOKS in case we want to start in the future.
+    # MONITOR_HOOKS[tool_id] = None
     return
 
 
@@ -595,6 +604,7 @@ if __name__ == "__main__":
 
     mstop(tool_name)
     print("=" * 40)
+
     print(f"** Monitoring state after stopped: {is_started(tool_id)}")
     y = 5
     tool_id, events_mask = mstart(tool_name)
