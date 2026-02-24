@@ -225,6 +225,7 @@ def start_local(
     trace_callbacks: Optional[Dict[int, CodeType]] = None,
     tool_id: Optional[int] = None,
     frame: Optional[FrameType] = None,
+    code: Optional[CodeType] = None,
     events_mask: Optional[int] = None,
     step_type: StepType = StepType.NO_STEPPING,
     step_granularity: Optional[StepGranularity] = None,
@@ -238,7 +239,8 @@ def start_local(
     if frame is None:
         frame = sys._getframe(1)
 
-    code = frame.f_code
+    if code is None:
+        code = frame.f_code
 
     if events_mask is None:
         events_mask = 0

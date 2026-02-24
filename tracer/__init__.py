@@ -1,8 +1,8 @@
 """
-Centralized Trace management of ``sys.monitor`` and ``sys.settrace``a.
+Centralized Trace management of ``sys.monitor`` and ``sys.settrace``.
 """
 
-from tracer.stepping import GLOBAL_EVENTS
+from tracer.stepping import GLOBAL_EVENTS, start_local
 from tracer.sys_monitoring import (ALL_EVENT_NAMES, ALL_EVENTS, EVENT2SHORT,
                                    MONITOR_HOOKS, PytraceException,
                                    add_trace_callbacks, find_hook_by_id,
@@ -43,5 +43,6 @@ __all__ = [
     "remove_hook",
     "size",
     "start",
+    "start_local",
     "stop",
 ]

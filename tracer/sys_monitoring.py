@@ -349,6 +349,8 @@ def mstart(
         if trace_callbacks is None:
             return tool_id, None
         pass
+    else:
+        MONITOR_HOOKS[tool_id] = trace_callbacks
     if ignore_filter is not None:
         tool_id = find_hook_by_name(tool_name)
 
