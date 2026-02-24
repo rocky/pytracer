@@ -219,6 +219,14 @@ def find_hook_by_id(tool_id: int) -> Optional[str]:
     except IndexError:
         return None
 
+def is_free_tool_id(sysmon_tool_id: int) -> bool:
+    """Return True if `sys.monitoring tool_id` is not in use
+    """
+    if sys.monitoring.get_tool(tool_id) is None:
+        TOOL_NAME[sysmon_tool_id] = None
+        return True
+    return False
+
 
 def add_trace_callbacks(
     tool_name: str,
@@ -278,6 +286,8 @@ def add_trace_callbacks(
             print(
                 f"Warning smashed old_callback {old_callback} in tool_id {tool_id}, event id {event_id}"
             )
+            pass
+
 
     MONITOR_HOOKS[tool_id] = trace_callbacks
     register_events(tool_id, new_events_mask, is_global, code)
@@ -351,7 +361,7 @@ def mstart(
         pass
     else:
         MONITOR_HOOKS[tool_id] = trace_callbacks
-    if ignore_filter is not None:
+    if tool_id is not None:
         tool_id = find_hook_by_name(tool_name)
 
     return tool_id, add_trace_callbacks(
@@ -386,7 +396,7 @@ def mstop(
     if (tool_id := find_hook_by_name(tool_name)) is None:
         return None
 
-    sys.monitoring.set_events(tool_id, 0)
+    # sys.monitoring.set_events(tool_id, 0)
 
     # Reset any local events in `code`.
     if code is None:
@@ -512,6 +522,7 @@ def register_tool_by_name(
 # Demo it
 if __name__ == "__main__":
 
+    print(f"TOOL_ID[5] is free? {is_free_tool_id(5)}")
     t = list(EVENT2SHORT.keys())
     t.sort()
     print("EVENT2SHORT.keys() == ALL_EVENT_NAMES: %s" % (tuple(t) == ALL_EVENT_NAMES))
@@ -591,9 +602,9 @@ if __name__ == "__main__":
         foo("foo")
         foo("bar")
 
-    print(f"** Monitoring started before start(): {is_started(1)}")
+    print(f"** Monitoring started before start(); is_started(1): {is_started(1)}")
     tool_id, events_mask = mstart(tool_name, tool_id=1, ignore_filter=ignore_filter)
-    print(f"tool_id is {tool_id}, events_mask: {events_mask}")
+    print(f"tool_id is {tool_id}, events_mask: {events_mask}; is_free: {is_free_tool_id(tool_id)}")
 
     callback_hooks = {
         E.CALL: call_event_callback,
@@ -607,7 +618,7 @@ if __name__ == "__main__":
     mstop(tool_name)
     print("=" * 40)
 
-    print(f"** Monitoring state after stopped: {is_started(tool_id)}")
+    print(f"** Monitoring state after stopped; is_free({tool_id}): {is_started(tool_id)}")
     y = 5
     tool_id, events_mask = mstart(tool_name)
     bar()

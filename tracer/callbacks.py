@@ -106,7 +106,7 @@ def call_event_handler_return(
                 del CODE_TRACKING[tool_id, code]
             else:
                 print(
-                    f"Woah - removed event mask short_code{code} with {code_info.breakpoints}"
+                    f"Woah - removed event mask {code_short(code)} with {code_info.breakpoints}"
                 )
     return
 
