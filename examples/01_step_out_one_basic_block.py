@@ -11,6 +11,10 @@ from tracer.stepping import (StepGranularity, StepType, set_step_into,
 from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
 
+tool_name = "01-step-out-one-basic-block"
+tool_id, events_mask = mstart(tool_name, tool_id=1)
+callback_hooks = set_callback_hooks_for_toolid(tool_id)
+
 
 def stepping_one_basic_block(
     arg: int, granularity: StepGranularity, events_mask: int
@@ -20,19 +24,18 @@ def stepping_one_basic_block(
         frame=sys._getframe(0),
         granularity=granularity,
         events_mask=events_mask,
+        callbacks=callback_hooks,
     )
     x = arg
     set_step_out(
         tool_id,
         frame=sys._getframe(0),
+        callbacks=callback_hooks,
     )
     y = x + arg
     return y
 
 
-tool_name = "00-stepping-one-basic-block"
-tool_id, events_mask = mstart(tool_name, tool_id=1)
-callback_hooks = set_callback_hooks_for_toolid(tool_id)
 ignore_filter = TraceFilter([sys.monitoring, mstop])
 
 

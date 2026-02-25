@@ -10,21 +10,25 @@ from tracer.stepping import (StepGranularity, StepType, set_step_into,
 from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
 
+tool_name = "02-stepping-single-loop"
+tool_id, events_mask = mstart(tool_name, tool_id=1)
+callback_hooks = set_callback_hooks_for_toolid(tool_id)
+ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_into])
+
 
 def stepping_iter_loop(arg: int, events_mask: int, granularity: StepGranularity) -> int:
     set_step_into(
-        tool_id, sys._getframe(0), granularity=granularity, events_mask=events_mask
+        tool_id,
+        sys._getframe(0),
+        granularity=granularity,
+        events_mask=events_mask,
+        callbacks=callback_hooks,
     )
     x = arg
     for i in iter(range(2)):
         x += i
     return x
 
-
-tool_name = "02-stepping-single-loop"
-tool_id, events_mask = mstart(tool_name, tool_id=1)
-callback_hooks = set_callback_hooks_for_toolid(tool_id)
-ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_into])
 
 # First step lines
 print("LINE EVENTS ONLY")

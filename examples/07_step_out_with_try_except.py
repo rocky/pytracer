@@ -10,20 +10,25 @@ from tracer.stepping import (StepGranularity, StepType, set_step_out,
 from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
 
+tool_name = "07-step-out-with-try-except"
+tool_id, events_mask = mstart(tool_name, tool_id=1)
+callback_hooks = set_callback_hooks_for_toolid(tool_id)
+ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_out])
 
-def step_try_except(arg: list, granularity: StepGranularity, events_mask: int) -> int:
-    set_step_out(tool_id, sys._getframe(0))
+
+def step_try_except(
+    arg: list,
+    granularity: StepGranularity,
+    events_mask: int,
+    callbacks=callback_hooks,
+) -> int:
+    set_step_out(tool_id, sys._getframe(0), callbacks=callback_hooks)
     try:
         arg[1] += 1
     except Exception:
         return 5
     return 2
 
-
-tool_name = "stepping-try-except"
-tool_id, events_mask = mstart(tool_name, tool_id=1)
-callback_hooks = set_callback_hooks_for_toolid(tool_id)
-ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_out])
 
 # First step lines
 print("LINE EVENTS ONLY")

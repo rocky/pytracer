@@ -16,23 +16,36 @@ def nested_function(x: list) -> list:
     return x
 
 
+tool_name = "08-step-simple-nested-call"
+tool_id, events_mask = mstart(tool_name, tool_id=1)
+callback_hooks = set_callback_hooks_for_toolid(tool_id)
+ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_into, set_step_over])
+
+
 def step_into_simple_nested_call(x: list) -> Tuple[int, int]:
-    set_step_into(tool_id, sys._getframe(0), StepGranularity.LINE_NUMBER, E.LINE)
+    set_step_into(
+        tool_id,
+        frame=sys._getframe(0),
+        granularity=StepGranularity.LINE_NUMBER,
+        events_mask=E.LINE,
+        callbacks=callback_hooks,
+    )
     x = nested_function([1, 2, 3])
     y = nested_function([4, 5, 6])
     return x, y
 
 
 def step_over_simple_nested_call(x: list) -> int:
-    set_step_over(tool_id, sys._getframe(0), StepGranularity.LINE_NUMBER, E.LINE)
+    set_step_over(
+        tool_id,
+        frame=sys._getframe(0),
+        granularity=StepGranularity.LINE_NUMBER,
+        events_mask=E.LINE,
+        callbacks=callback_hooks,
+    )
     x = nested_function([1, 2, 3])
     return x
 
-
-tool_name = "08-step-simple-nested-call"
-tool_id, events_mask = mstart(tool_name, tool_id=1)
-callback_hooks = set_callback_hooks_for_toolid(tool_id)
-ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_into, set_step_over])
 
 # First, step try step into
 print("STEP INTO NESTED FUNCTION")

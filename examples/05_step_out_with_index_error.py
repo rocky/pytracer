@@ -11,17 +11,22 @@ from tracer.stepping import (StepGranularity, StepType, set_step_out,
 from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
 
-
-def stepping_index_error(arg: list, event_mask: int) -> int:
-    set_step_out(tool_id, sys._getframe(0), event_mask)
-    y = arg[1]
-    return y
-
-
 tool_name = "stepping-into-index-error"
 tool_id, events_mask = mstart(tool_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
 ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_out])
+
+
+def stepping_index_error(arg: list, events_mask: int) -> int:
+    set_step_out(
+        tool_id,
+        frame=sys._getframe(0),
+        events_mask=events_mask,
+        callbacks=callback_hooks,
+    )
+    y = arg[1]
+    return y
+
 
 # First step lines
 print("LINE EVENTS ONLY")

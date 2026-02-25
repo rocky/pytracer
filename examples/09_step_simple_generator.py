@@ -10,6 +10,11 @@ from tracer.stepping import (StepGranularity, StepType, set_step_into,
 from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
 
+tool_name = "09-step-simple-generator"
+tool_id, events_mask = mstart(tool_name, tool_id=1)
+callback_hooks = set_callback_hooks_for_toolid(tool_id)
+ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_into, set_step_over])
+
 
 def nested_function() -> int:
     yield 1
@@ -18,23 +23,30 @@ def nested_function() -> int:
 
 
 def step_into_simple_nested_call(x: int) -> int:
-    set_step_into(tool_id, sys._getframe(0), StepGranularity.LINE_NUMBER, E.LINE)
+    set_step_into(
+        tool_id,
+        frame=sys._getframe(0),
+        granularity=StepGranularity.LINE_NUMBER,
+        events_mask=E.LINE,
+        callbacks=callback_hooks,
+    )
     for i in nested_function():
         x += i
     return x
 
 
 def step_over_simple_nested_call(x: list) -> int:
-    set_step_over(tool_id, sys._getframe(0), StepGranularity.LINE_NUMBER, E.LINE)
+    set_step_over(
+        tool_id,
+        frame=sys._getframe(0),
+        granularity=StepGranularity.LINE_NUMBER,
+        events_mask=E.LINE,
+        callbacks=callback_hooks,
+    )
     for i in nested_function():
         x += i
     return x
 
-
-tool_name = "09-step-simple-generator"
-tool_id, events_mask = mstart(tool_name, tool_id=1)
-callback_hooks = set_callback_hooks_for_toolid(tool_id)
-ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_into, set_step_over])
 
 # First, step try step into
 print("STEP INTO NESTED FUNCTION")

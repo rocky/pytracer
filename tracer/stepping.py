@@ -6,7 +6,7 @@ import sys
 from dataclasses import dataclass
 from enum import Enum
 from types import CodeType, FrameType
-from typing import Dict, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple
 
 from tracer.sys_monitoring import E, mstart
 
@@ -128,7 +128,11 @@ def code_short(code: CodeType) -> str:
 
 
 def set_step_into(
-    tool_id: int, frame: FrameType, granularity: StepGranularity, events_mask: int
+    tool_id: int,
+    frame: FrameType,
+    granularity: StepGranularity,
+    events_mask: int,
+    callbacks: Dict[int, Callable],
 ):
     """
     Set local callback for a `step over` in `code`.
@@ -153,10 +157,13 @@ def set_step_into(
     )
 
     code = frame.f_code
-    sys.monitoring.set_local_events(tool_id, code, combined_events_mask)
+
+    sync_callbacks_with_mask(
+        code, tool_id, events_mask, combined_events_mask, callbacks
+    )
 
 
-def set_step_out(tool_id: int, frame: FrameType):
+def set_step_out(tool_id: int, frame: FrameType, callbacks: Dict[int, Callable]):
     """
     Set local callback for a `step out`.
     `events_mask` should have an event mask for local events line or
@@ -188,11 +195,19 @@ def set_step_out(tool_id: int, frame: FrameType):
         calls_to=None,
     )
 
-    sys.monitoring.set_local_events(tool_id, code, combined_events_mask)
+    code = frame.f_code
+
+    sync_callbacks_with_mask(
+        code, tool_id, events_mask, combined_events_mask, callbacks
+    )
 
 
 def set_step_over(
-    tool_id: int, frame: FrameType, step_granularity: StepGranularity, events_mask: int
+    tool_id: int,
+    frame: FrameType,
+    granularity: StepGranularity,
+    events_mask: int,
+    callbacks: Dict[int, Callable],
 ):
     """
     Set local callback for a `step over`.
@@ -218,7 +233,11 @@ def set_step_over(
     )
 
     code = frame.f_code
-    sys.monitoring.set_local_events(tool_id, code, combined_events_mask)
+
+    sync_callbacks_with_mask(
+        code, tool_id, events_mask, combined_events_mask, callbacks
+    )
+
 
 def start_local(
     tool_name: str,
@@ -268,3 +287,37 @@ def start_local(
         ignore_filter=ignore_filter,
     )
     return tool_id, event_mask
+
+
+def sync_callbacks_with_mask(
+    code: CodeType,
+    tool_id: int,
+    events_mask: int,
+    combined_events_mask: int,
+    callbacks: Dict[int, Callable],
+):
+    for event in (
+        E.BRANCH_LEFT,
+        E.BRANCH_RIGHT,
+        E.CALL,
+        E.INSTRUCTION,
+        E.JUMP,
+        E.LINE,
+        E.STOP_ITERATION,
+    ):
+        if event & events_mask == 0:
+            old_callback = sys.monitoring.register_callback(tool_id, event, None)
+            if old_callback is not None:
+                print(f"Cleared event {event} with {old_callback}")
+                pass
+            pass
+        elif (callback := callbacks.get(event)) is not None:
+            old_callback = sys.monitoring.register_callback(tool_id, event, callback)
+            if old_callback != callback:
+                print(f"Woah - smashed event {event} {old_callback} with {callback}")
+            pass
+        else:
+            print(f"Woah - should have found a callback for {event}; clearing event")
+            combined_events_mask &= ~event
+
+    sys.monitoring.set_local_events(tool_id, code, combined_events_mask)

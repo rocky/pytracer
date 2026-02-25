@@ -11,18 +11,24 @@ from tracer.stepping import (StepGranularity, StepType, set_step_into,
 from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
 
-
-def step_over_long_import():
-    set_step_into(tool_id, sys._getframe(0), StepGranularity.LINE_NUMBER, E.LINE)
-    import mathics
-
-    print(len(dir(mathics)))
-
-
 tool_name = "13-step-into-long_import"
 tool_id, events_mask = mstart(tool_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
 ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_into])
+
+
+def step_over_long_import():
+    set_step_into(
+        tool_id,
+        sys._getframe(0),
+        StepGranularity.LINE_NUMBER,
+        E.LINE,
+        callbacks=callback_hooks,
+    )
+    import mathics
+
+    print(len(dir(mathics)))
+
 
 # First, step try step into
 print("STEP INTO LONG IMPORT")
