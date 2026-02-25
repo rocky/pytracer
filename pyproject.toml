@@ -11,7 +11,7 @@ authors = [
 ]
 
 name = "tracer"
-description = "Centralized sys.settrace management"
+description = "Centralized sys.settrace and sys.monitoring management"
 dependencies = []
 readme = "README.rst"
 license = "GPL-3.0-or-later"
