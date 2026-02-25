@@ -8,7 +8,7 @@ from enum import Enum
 from types import CodeType, FrameType
 from typing import Callable, Dict, Optional, Tuple
 
-from tracer.sys_monitoring import E, mstart
+from tracer.sys_monitoring import EVENT2STR, E, mstart
 
 # Events that are not allowed in sys.monitoring.set_local_events
 GLOBAL_EVENTS = E.C_RAISE | E.C_RETURN | E.PY_UNWIND | E.RAISE
@@ -148,6 +148,7 @@ def set_step_into(
 
     combined_events_mask = STEP_OUT_EVENTS | events_mask | E.CALL | E.PY_START
 
+
     # Note step out is desired in FRAME_TRACKING so it can be
     # detected in the return portion of the callback handlers.
     FRAME_TRACKING[frame] = FrameInfo(
@@ -159,7 +160,7 @@ def set_step_into(
     code = frame.f_code
 
     sync_callbacks_with_mask(
-        code, tool_id, events_mask, combined_events_mask, callbacks
+        code, tool_id, combined_events_mask, callbacks
     )
 
 
@@ -198,7 +199,7 @@ def set_step_out(tool_id: int, frame: FrameType, callbacks: Dict[int, Callable])
     code = frame.f_code
 
     sync_callbacks_with_mask(
-        code, tool_id, events_mask, combined_events_mask, callbacks
+        code, tool_id, combined_events_mask, callbacks
     )
 
 
@@ -235,7 +236,7 @@ def set_step_over(
     code = frame.f_code
 
     sync_callbacks_with_mask(
-        code, tool_id, events_mask, combined_events_mask, callbacks
+        code, tool_id, combined_events_mask, callbacks
     )
 
 
@@ -293,7 +294,6 @@ def sync_callbacks_with_mask(
     code: CodeType,
     tool_id: int,
     events_mask: int,
-    combined_events_mask: int,
     callbacks: Dict[int, Callable],
 ):
     for event in (
@@ -308,16 +308,17 @@ def sync_callbacks_with_mask(
         if event & events_mask == 0:
             old_callback = sys.monitoring.register_callback(tool_id, event, None)
             if old_callback is not None:
-                print(f"Cleared event {event} with {old_callback}")
+                print(f"Cleared event {EVENT2STR[event]} with {old_callback}")
                 pass
             pass
         elif (callback := callbacks.get(event)) is not None:
+            # print(f"XXX registering event {EVENT2STR[event]} ({event}) with {callback}")
             old_callback = sys.monitoring.register_callback(tool_id, event, callback)
-            if old_callback != callback:
-                print(f"Woah - smashed event {event} {old_callback} with {callback}")
+            if old_callback is not None and old_callback != callback:
+                print(f"Woah - smashed event {EVENT2STR[event]} ({event}) {old_callback} with {callback}")
             pass
         else:
-            print(f"Woah - should have found a callback for {event}; clearing event")
-            combined_events_mask &= ~event
+            print(f"Woah - should have found a callback for {EVENT2STR[event]}; clearing event")
+            events_mask &= ~event
 
-    sys.monitoring.set_local_events(tool_id, code, combined_events_mask)
+    sys.monitoring.set_local_events(tool_id, code, events_mask)

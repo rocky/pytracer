@@ -42,8 +42,7 @@ from tracer.breakpoint import CODE_TRACKING, CodeInfo
 E = sys.monitoring.events
 
 LOCAL_EVENTS = (
-    E.PY_START
-    | E.BRANCH_LEFT
+    E.BRANCH_LEFT
     | E.BRANCH_RIGHT
     | E.CALL
     | E.INSTRUCTION
@@ -51,6 +50,7 @@ LOCAL_EVENTS = (
     | E.LINE
     | E.PY_RESUME
     | E.PY_RETURN
+    | E.PY_START
     | E.PY_YIELD
     | E.STOP_ITERATION
 )
@@ -103,6 +103,20 @@ EVENT2SHORT = {
     "return": "<-",
     "start": "|-",
     "yield": "-|",
+}
+
+EVENT2STR = {
+    E.BRANCH_LEFT: "BRANCH_LEFT",
+    E.BRANCH_RIGHT: "BRANCH_RIGHT",
+    E.CALL: "CALL",
+    E.INSTRUCTION: "INSTRUCTION",
+    E.JUMP: "JUMP",
+    E.LINE: "LINE",
+    E.PY_RESUME: "PY_RESUME",
+    E.PY_RETURN: "PY_RETURN",
+    E.PY_START: "PY_START",
+    E.PY_YIELD: "PY_YIELD",
+    E.STOP_ITERATION: "PY_STOP_ITERATION",
 }
 
 ALL_EVENTS = frozenset(ALL_EVENT_NAMES)
