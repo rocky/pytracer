@@ -3,6 +3,7 @@ Stepping for a simple nested call.
 """
 
 import sys
+from typing import Tuple
 
 from tracer.callbacks import set_callback_hooks_for_toolid
 from tracer.stepping import (StepGranularity, StepType, set_step_into,
@@ -15,7 +16,7 @@ def nested_function(x: list) -> list:
     return x
 
 
-def step_into_simple_nested_call(x: list) -> int:
+def step_into_simple_nested_call(x: list) -> Tuple[int, int]:
     set_step_into(tool_id, sys._getframe(0), StepGranularity.LINE_NUMBER, E.LINE)
     x = nested_function([1, 2, 3])
     y = nested_function([4, 5, 6])

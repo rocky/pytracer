@@ -2,11 +2,14 @@
 Centralized Trace management of ``sys.monitor`` and ``sys.settrace``.
 """
 
-from tracer.stepping import GLOBAL_EVENTS, start_local
+from tracer.stepping import (GLOBAL_EVENTS, StepGranularity, StepType,
+                             set_step_into, set_step_out, set_step_over,
+                             start_local)
 from tracer.sys_monitoring import (ALL_EVENT_NAMES, ALL_EVENTS, EVENT2SHORT,
                                    MONITOR_HOOKS, PytraceException,
                                    add_trace_callbacks, find_hook_by_id,
-                                   find_hook_by_name, msize, mstart, mstop)
+                                   find_hook_by_name, msize, mstart, mstop,
+                                   register_tool_by_name)
 from tracer.trace import (DEFAULT_ADD_HOOK_OPTS, HOOKS, add_hook, clear_hooks,
                           clear_hooks_and_stop, find_hook, is_started,
                           null_trace_hook, option_set, remove_hook, size,
@@ -23,6 +26,8 @@ __all__ = [
     "HOOKS",
     "MONITOR_HOOKS",
     "PytraceException",
+    "StepGranularity",
+    "StepType",
     "TraceFilter",
     "__version__",
     "add_hook",
@@ -40,7 +45,11 @@ __all__ = [
     "mstop",
     "null_trace_hook",
     "option_set",
+    "register_tool_by_name",
     "remove_hook",
+    "set_step_into",
+    "set_step_out",
+    "set_step_over",
     "size",
     "start",
     "start_local",

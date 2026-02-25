@@ -222,7 +222,7 @@ def find_hook_by_id(tool_id: int) -> Optional[str]:
 def is_free_tool_id(sysmon_tool_id: int) -> bool:
     """Return True if `sys.monitoring tool_id` is not in use
     """
-    if sys.monitoring.get_tool(tool_id) is None:
+    if sys.monitoring.get_tool(sysmon_tool_id) is None:
         TOOL_NAME[sysmon_tool_id] = None
         return True
     return False
@@ -254,9 +254,8 @@ def add_trace_callbacks(
             return None, None
 
         # FIXME check for TOOL_NAME all full.
-        TOOL_NAME[tool_id] = tool_name
         if (old_tool := sys.monitoring.get_tool(tool_id)) is None:
-            sys.monitoring.use_tool_id(tool_id, tool_name)
+            register_tool_by_name(tool_name, tool_id, can_change_tool_id=True)
         else:
             if trace_callbacks is not None and old_tool != tool_name:
                 print("Not adding a trace_callback where it already appeared")
@@ -338,7 +337,7 @@ def mstart(
     is_global: bool = True,
     code: Optional[CodeType] = None,
     ignore_filter=None,
-) -> Tuple[int, int]:
+) -> Tuple[Optional[int], Optional[int]]:
     """
     Start using any previously-registered trace hooks. If
     options[trace_func] is not None, we will search for that and add it, if it's
@@ -352,6 +351,10 @@ def mstart(
                       f"{found_tool_id} not {tool_id}. Using {found_tool_id}"
                       )
         tool_id = found_tool_id
+
+    if tool_id is None:
+        print(f"Error: no tool id found for {tool_name}.")
+        return None, None
 
     if trace_callbacks is None:
         tool_id = register_tool_by_name(tool_name, tool_id)
@@ -461,8 +464,6 @@ def register_tool_by_name(
     In any event the tool_id used (which will be the same as tool_id coming
     in if that was not None is returned when there is no error.
     """
-    # import pdb; pdb.set_trace()
-
     if tool_id is not None:
         check_tool_id(tool_id)
 
@@ -509,6 +510,7 @@ def register_tool_by_name(
     # if that hasn't been done before.
 
     if TOOL_NAME[tool_id] is None:
+        sys.monitoring.use_tool_id(tool_id, tool_name)
         TOOL_NAME[tool_id] = tool_name
     elif TOOL_NAME[tool_id] != tool_name:
         raise PytraceException(
