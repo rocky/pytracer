@@ -3,7 +3,7 @@ Debugger callback hooks
 """
 
 import sys
-from types import CodeType, FrameType
+from types import CodeType, FrameType, FunctionType
 
 import tracer.sys_monitoring as sys_monitoring
 from tracer.breakpoint import CODE_TRACKING
@@ -17,7 +17,7 @@ E = sys.monitoring.events
 
 
 def call_event_callback(
-    tool_id: int,
+    sysmon_tool_id: int,
     event: str,
     code: CodeType,
     instruction_offset: int,
@@ -26,7 +26,7 @@ def call_event_callback(
 ) -> object:
     """A CALL event callback trace function"""
 
-    if (ignore_filter := sys_monitoring.MONITOR_FILTERS[tool_id]) is not None:
+    if (ignore_filter := sys_monitoring.MONITOR_FILTERS[sysmon_tool_id]) is not None:
         if ignore_filter.is_excluded(code_to_call) or ignore_filter.is_excluded(code):
             return
 
@@ -37,7 +37,7 @@ def call_event_callback(
     # * step_type
 
     # For testing, we don't want to change events_mask. Just note it.
-    events_mask = sys.monitoring.get_local_events(tool_id, code)
+    events_mask = sys.monitoring.get_local_events(sysmon_tool_id, code)
 
     # Below: 0 is us; 1 is our closure lambda, and 2 is the user code.
     frame = sys._getframe(2)
@@ -53,8 +53,26 @@ def call_event_callback(
 
     step_type = frame_info.step_type
     step_granularity = frame_info.step_granularity
+    step_mask = E.LINE if step_granularity == StepGranularity.LINE_NUMBER else E.INSTRUCTION
 
-    if child_code_info := CODE_TRACKING.get((tool_id, code_to_call), None) is not None:
+    if not isinstance(code_to_call, CodeType) or isinstance(code_to_call, FunctionType):
+        # Will be instantiating a class, set_local_events only works on code.
+        code_class = code_to_call
+        for field in ("__code_", "__new__", "__init__"):
+            if hasattr(code_to_call, field):
+                code_to_call = getattr(code_to_call, field)
+                if isinstance(code_to_call, CodeType):
+                    break
+                pass
+            pass
+        else:
+            # FIXME: we could get drastic and trap all member functions in class!
+            print(f"XXX4 cannot find Python code in code for {code_class}")
+            return
+    else:
+        print(f"XXX7 {code_to_call} is not a class?")
+
+    if child_code_info := CODE_TRACKING.get((sysmon_tool_id, code_to_call), None) is not None:
         # We've seen code_to_call, it may have a local event mask that we have
         # to correct.
         # Figure out the code's new events_mask.
@@ -64,15 +82,25 @@ def call_event_callback(
                 # Clear out events mask in code that we are about to call.
                 events_mask_child = 0
                 pass
+            else:
+                events_mask_child |= STEP_INTO_TRACKING | step_mask
         else:
-            events_mask_child = sys.monitoring.get_local_events(tool_id, code_to_call)
+            events_mask_child = sys.monitoring.get_local_events(sysmon_tool_id, code_to_call)
             if frame_info.steptype in (StepType.STEP_OVER, StepType.STEP_OUT):
                 events_mask_child &= ~(STEP_INTO_TRACKING | E.LINE | E.INSTRUCTION)
-        sys.monitoring.set_local_events(tool_id, code_to_call, events_mask_child)
+        sys.monitoring.set_local_events(sysmon_tool_id, code_to_call, events_mask_child)
+    else:
+        events_mask_child = sys.monitoring.get_local_events(sysmon_tool_id, code_to_call)
+        if frame_info.step_type in (StepType.STEP_OVER, StepType.STEP_OUT):
+            events_mask_child &= ~(STEP_INTO_TRACKING | E.LINE | E.INSTRUCTION)
+        else:
+            events_mask_child |= STEP_INTO_TRACKING | step_mask
+        print(f"XXX1 {bin(events_mask_child)} ({events_mask_child}) {code_to_call}" )
+
 
     print(
         (
-            f"\n{event.upper()}: tool id: {tool_id}, {bin(events_mask)} ({events_mask}) {step_type} {step_granularity} code:\n\t"
+            f"\n{event.upper()}: tool id: {sysmon_tool_id}, {bin(events_mask)} ({events_mask}) {step_type} {step_granularity} code:\n\t"
             f"{code_short(code)}, offset: *{instruction_offset}"
         )
     )
@@ -83,7 +111,7 @@ def call_event_callback(
         code_to_call.__code__, CodeType
     ):
         return call_event_handler_return(
-            tool_id, code_to_call.__code__, events_mask, step_type
+            sysmon_tool_id, code_to_call.__code__, events_mask, step_type
         )
 
 

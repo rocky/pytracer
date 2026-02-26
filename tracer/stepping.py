@@ -97,7 +97,8 @@ def refresh_code_mask(tool_id: int, frame: FrameInfo) -> Tuple[int, int]:
         frame_info := FRAME_TRACKING.get(frame)
     ) and events_mask != frame_info.local_events_mask:
         print(
-            f"WOOT local events mask changed {events_mask} vs. {frame_info.local_events_mask}"
+            f"WOOT local events mask changed from {bin(events_mask)} ({events_mask})"
+            f" to {bin(frame_info.local_events_mask)} ({frame_info.local_events_mask})"
         )
         sys.monitoring.set_local_events(
             tool_id, frame.f_code, frame_info.local_events_mask
@@ -222,7 +223,7 @@ def set_step_over(
     # Note that all "~" operations should be done before any "|" operations.
     events_mask &= ~GLOBAL_EVENTS
 
-    combined_events_mask = STEP_OUT_EVENTS | events_mask | E.CALL | E.PY_START
+    combined_events_mask = STEP_OUT_EVENTS | events_mask | E.PY_START
 
     # Note step out is desired in FRAME_TRACKING so it can be
     # detected in the return portion of the callback handlers.

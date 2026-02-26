@@ -25,9 +25,9 @@ def step_over_long_import():
         E.LINE,
         callbacks=callback_hooks,
     )
-    import numpy as n
+    import scipy
 
-    print(len(dir(n)))
+    print(scipy.special.hyp1f1(0.5, 0.5, 0))
 
 
 # First, step try step into
