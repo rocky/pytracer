@@ -5,7 +5,7 @@ Debugger-like "step into", "step over" and "finish" support.
 import sys
 from dataclasses import dataclass
 from enum import Enum
-from types import CodeType, FrameType
+from types import CodeType, FrameType, FunctionType
 from typing import Callable, Dict, Optional, Tuple
 
 from tracer.sys_monitoring import EVENT2STR, E, events_mask2str, mstart
@@ -128,6 +128,31 @@ def code_short(code: CodeType) -> str:
 #
 #  * "finish "stepping which is local return and yield, and global PY_UNWIND
 #  * "continue"
+
+
+def set_step_continue(tool_id: int, frame: FrameType, callbacks: Dict[int, Callable]) -> int:
+    """
+    Set local callback to remove stepping.
+    """
+
+    # Note step out is desired in FRAME_TRACKING so it can be
+    # detected in the return portion of the callback handlers.
+
+    code = frame.f_code
+
+    FRAME_TRACKING[frame] = FrameInfo(
+        step_type=StepType.NO_STEPPING,
+        step_granularity=None,
+        local_events_mask=E.NO_EVENTS,
+        calls_to=None,
+    )
+
+    code = frame.f_code
+
+    sync_callbacks_with_mask(
+        code, tool_id, E.NO_EVENTS, callbacks
+    )
+    return E.NO_EVENTS
 
 
 def set_step_into(
@@ -269,7 +294,7 @@ def start_local(
         code = frame.f_code
 
     if events_mask is None:
-        events_mask = 0
+        events_mask = E.NO_EVENTS
 
     if step_type == StepType.STEP_INTO:
         step_mask_granularity = (
@@ -313,8 +338,14 @@ def sync_callbacks_with_mask(
     ):
         if event & events_mask == 0:
             old_callback = sys.monitoring.register_callback(tool_id, event, None)
+            event_str = EVENT2STR[event]
             if old_callback is not None:
-                print(f"Cleared event {EVENT2STR[event]} with {old_callback}")
+                if isinstance(old_callback, FunctionType) and  old_callback.__name__ == "<lambda>":
+                    old_name = f"{event_str.lower()} callback"
+                else:
+                    old_name = str(old_callback)
+
+                print(f"Cleared event {event_str} in {old_name}")
                 pass
             pass
         elif (callback := callbacks.get(event)) is not None:

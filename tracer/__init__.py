@@ -3,8 +3,8 @@ Centralized Trace management of ``sys.monitor`` and ``sys.settrace``.
 """
 
 from tracer.stepping import (GLOBAL_EVENTS, StepGranularity, StepType,
-                             set_step_into, set_step_out, set_step_over,
-                             start_local)
+                             set_step_continue, set_step_into, set_step_out,
+                             set_step_over, start_local)
 from tracer.sys_monitoring import (ALL_EVENT_NAMES, ALL_EVENTS, EVENT2SHORT,
                                    MONITOR_HOOKS, PytraceException,
                                    add_trace_callbacks, find_hook_by_id,
@@ -47,6 +47,7 @@ __all__ = [
     "option_set",
     "register_tool_by_name",
     "remove_hook",
+    "set_step_continue",
     "set_step_into",
     "set_step_out",
     "set_step_over",
