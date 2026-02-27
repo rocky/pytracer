@@ -53,7 +53,6 @@ def call_event_callback(
 
     step_type = frame_info.step_type
     step_granularity = frame_info.step_granularity
-    step_mask = E.LINE if step_granularity == StepGranularity.LINE_NUMBER else E.INSTRUCTION
 
     if not isinstance(code_to_call, CodeType) or isinstance(code_to_call, FunctionType):
         # Will be instantiating a class, set_local_events only works on code.
@@ -83,7 +82,10 @@ def call_event_callback(
                 events_mask_child = 0
                 pass
             else:
-                events_mask_child |= STEP_INTO_TRACKING | step_mask
+                # E.LINE is used because even if we are tracking instructions,
+                # we will need to set E.LINE for instructions to have an effect.
+                # If this changes we can consider replacing with E.INSTRUCTIONS.
+                events_mask_child |= STEP_INTO_TRACKING | E.LINE
         else:
             events_mask_child = sys.monitoring.get_local_events(sysmon_tool_id, code_to_call)
             if frame_info.steptype in (StepType.STEP_OVER, StepType.STEP_OUT):
@@ -94,7 +96,10 @@ def call_event_callback(
         if frame_info.step_type in (StepType.STEP_OVER, StepType.STEP_OUT):
             events_mask_child &= ~(STEP_INTO_TRACKING | E.LINE | E.INSTRUCTION)
         else:
-            events_mask_child |= STEP_INTO_TRACKING | step_mask
+            # E.LINE is used because even if we are tracking instructions,
+            # we will need to set E.LINE for instructions to have an effect.
+            # If this changes we can consider replacing with E.INSTRUCTIONS.
+            events_mask_child |= STEP_INTO_TRACKING | E.LINE
         print(f"XXX1 {bin(events_mask_child)} ({events_mask_child}) {code_to_call}" )
 
 

@@ -35,7 +35,7 @@ behaves analogous to threading.settrace.
 import inspect
 import sys
 from types import CodeType
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 from tracer.breakpoint import CODE_TRACKING, CodeInfo
 
@@ -120,6 +120,16 @@ EVENT2STR = {
 }
 
 ALL_EVENTS = frozenset(ALL_EVENT_NAMES)
+
+def events_mask2str(events_mask: int) -> Set[str]:
+    result_set = set()
+    for event_int, event_name in EVENT2STR.items():
+        if event_int == 0:
+            break
+        if (event_int & events_mask) != 0:
+            result_set.add(event_name)
+            events_mask &= ~event_int
+    return result_set
 
 
 class FixedList:

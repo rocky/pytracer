@@ -8,7 +8,7 @@ from enum import Enum
 from types import CodeType, FrameType
 from typing import Callable, Dict, Optional, Tuple
 
-from tracer.sys_monitoring import EVENT2STR, E, mstart
+from tracer.sys_monitoring import EVENT2STR, E, events_mask2str, mstart
 
 # Events that are not allowed in sys.monitoring.set_local_events
 GLOBAL_EVENTS = E.C_RAISE | E.C_RETURN | E.PY_UNWIND | E.RAISE
@@ -16,7 +16,7 @@ STEP_INTO_TRACKING = E.CALL | E.PY_START | E.PY_RETURN
 
 # Mask to use for "step out". Use with & ^(INSTRUCTION_LIKE_EVENTS)
 INSTRUCTION_LIKE_EVENTS = (
-    E.LINE | E.INSTRUCTION | E.JUMP | E.BRANCH_LEFT | E.BRANCH_RIGHT | E.STOP_ITERATION
+    E.CALL | E.LINE | E.INSTRUCTION | E.JUMP | E.BRANCH_LEFT | E.BRANCH_RIGHT | E.STOP_ITERATION
 )
 
 
@@ -97,8 +97,10 @@ def refresh_code_mask(tool_id: int, frame: FrameInfo) -> Tuple[int, int]:
         frame_info := FRAME_TRACKING.get(frame)
     ) and events_mask != frame_info.local_events_mask:
         print(
-            f"WOOT local events mask changed from {bin(events_mask)} ({events_mask})"
-            f" to {bin(frame_info.local_events_mask)} ({frame_info.local_events_mask})"
+            f"WOOT local events mask changed from\n\t{bin(events_mask)} "
+            f"({events_mask}) {events_mask2str(events_mask)}"
+            f" to\n\t{bin(frame_info.local_events_mask)} "
+            f"({frame_info.local_events_mask}) {events_mask2str(frame_info.local_events_mask)}"
         )
         sys.monitoring.set_local_events(
             tool_id, frame.f_code, frame_info.local_events_mask
@@ -134,7 +136,7 @@ def set_step_into(
     granularity: StepGranularity,
     events_mask: int,
     callbacks: Dict[int, Callable],
-):
+) -> int:
     """
     Set local callback for a `step over` in `code`.
     `event_set` should have an event mask for local events line or
@@ -163,9 +165,10 @@ def set_step_into(
     sync_callbacks_with_mask(
         code, tool_id, combined_events_mask, callbacks
     )
+    return combined_events_mask
 
 
-def set_step_out(tool_id: int, frame: FrameType, callbacks: Dict[int, Callable]):
+def set_step_out(tool_id: int, frame: FrameType, callbacks: Dict[int, Callable]) -> int:
     """
     Set local callback for a `step out`.
     `events_mask` should have an event mask for local events line or
@@ -186,9 +189,9 @@ def set_step_out(tool_id: int, frame: FrameType, callbacks: Dict[int, Callable])
 
     # THINK ABOUT: Do we really care about PY_START? Clear it anyway.
     # TODO: If we can be sure there is not stale code (stale frames) that were
-    # skipped over by execptions, we don't need to trace into E.CALL to check for this.
+    # skipped over by exceptions, we don't need to trace into E.CALL to check for this.
 
-    combined_events_mask = STEP_OUT_EVENTS | events_mask | E.CALL | E.PY_START
+    combined_events_mask = STEP_OUT_EVENTS | events_mask
 
     FRAME_TRACKING[frame] = FrameInfo(
         step_type=StepType.STEP_OUT,
@@ -202,6 +205,7 @@ def set_step_out(tool_id: int, frame: FrameType, callbacks: Dict[int, Callable])
     sync_callbacks_with_mask(
         code, tool_id, combined_events_mask, callbacks
     )
+    return combined_events_mask
 
 
 def set_step_over(
@@ -210,7 +214,7 @@ def set_step_over(
     granularity: StepGranularity,
     events_mask: int,
     callbacks: Dict[int, Callable],
-):
+) -> int:
     """
     Set local callback for a `step over`.
     `events_mask` should have an event mask for local events line or
@@ -239,6 +243,7 @@ def set_step_over(
     sync_callbacks_with_mask(
         code, tool_id, combined_events_mask, callbacks
     )
+    return combined_events_mask
 
 
 def start_local(
