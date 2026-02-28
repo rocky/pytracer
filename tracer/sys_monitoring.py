@@ -70,11 +70,13 @@ ALL_EVENT_NAMES = (
     "branch",
     "branch_left",
     "branch_right",
+    "builtin_call", # We synthesize this; It is not a part of sys.monitoring.events.
     "c_call",
     "c_exception",
     "c_return",
     "call",
     "exception",
+    "function_call", # We synthesize this; It is not a part of sys.monitoring.events.
     "instruction",
     "jump",
     "line",
@@ -88,13 +90,15 @@ ALL_EVENT_NAMES = (
 # If you want short strings for the above event names
 EVENT2SHORT = {
     "branch": "><",
-    "branch_left": ".>",
-    "branch_right": "<.",
+    "branch_left": ".<",
+    "branch_right": ">.",
+    "builtin_call": "b>",
     "c_call": "C>",
     "c_exception": "C!",
     "c_return": "C<",
     "call": "->",
     "exception": "!!",
+    "function_call": "f>",
     "jump": "/\\",
     "line": "--",
     "instruction": "..",
