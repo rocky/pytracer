@@ -35,38 +35,14 @@ behaves analogous to threading.settrace.
 import inspect
 import sys
 from types import CodeType
-from typing import Any, Callable, Dict, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Final, Optional, Set, Tuple
 
 from tracer.breakpoint import CODE_TRACKING, CodeInfo
 
 E = sys.monitoring.events
 
-LOCAL_EVENTS = (
-    E.BRANCH_LEFT
-    | E.BRANCH_RIGHT
-    | E.CALL
-    | E.INSTRUCTION
-    | E.JUMP
-    | E.LINE
-    | E.PY_RESUME
-    | E.PY_RETURN
-    | E.PY_START
-    | E.PY_YIELD
-    | E.STOP_ITERATION
-)
-
-# The maximum number of sys.monitoring tool IDs is 6 (range 0 to 5)
-MAX_TOOL_IDS = 6
-TOOL_ID_RANGE = range(MAX_TOOL_IDS)
-
-# A mapping of tool ids (a number) to tool names (as string)
-
-# We run trace_func if the event is in event_set.
-STARTED_STATE: Dict[int, bool] = {}
-
-# NOTE: This file now uses sys.monitoring (Python 3.12+) instead of sys.settrace.
-
-ALL_EVENT_NAMES = (
+# For a given Python version, some of the below might not exist.
+ALL_EVENT_NAMES: Final[Tuple[str]] = (
     "branch",
     "branch_left",
     "branch_right",
@@ -87,8 +63,9 @@ ALL_EVENT_NAMES = (
     "yield",
 )
 
-# If you want short strings for the above event names
-EVENT2SHORT = {
+# Short two-character strings for the sys.monitoring.events.
+# For a given Python version, some of the below might not exist.
+EVENT2SHORT: Final[Dict[str, str]] = {
     "branch": "><",
     "branch_left": ".<",
     "branch_right": ">.",
@@ -109,19 +86,73 @@ EVENT2SHORT = {
     "yield": "-|",
 }
 
-EVENT2STR = {
-    E.BRANCH_LEFT: "BRANCH_LEFT",
-    E.BRANCH_RIGHT: "BRANCH_RIGHT",
-    E.CALL: "CALL",
-    E.INSTRUCTION: "INSTRUCTION",
-    E.JUMP: "JUMP",
-    E.LINE: "LINE",
-    E.PY_RESUME: "PY_RESUME",
-    E.PY_RETURN: "PY_RETURN",
-    E.PY_START: "PY_START",
-    E.PY_YIELD: "PY_YIELD",
-    E.STOP_ITERATION: "PY_STOP_ITERATION",
-}
+
+if sys.version_info[:2] >= (3, 14):
+    EVENT2STR: Final[Dict[str, str]] = {
+        E.BRANCH_LEFT: "BRANCH_LEFT",
+        E.BRANCH_RIGHT: "BRANCH_RIGHT",
+        E.CALL: "CALL",
+        E.INSTRUCTION: "INSTRUCTION",
+        E.JUMP: "JUMP",
+        E.LINE: "LINE",
+        E.PY_RESUME: "PY_RESUME",
+        E.PY_RETURN: "PY_RETURN",
+        E.PY_START: "PY_START",
+        E.PY_YIELD: "PY_YIELD",
+        E.STOP_ITERATION: "PY_STOP_ITERATION",
+    }
+    LOCAL_EVENTS: Final[Tuple] = (
+        E.BRANCH_LEFT
+        | E.BRANCH_RIGHT
+        | E.CALL
+        | E.INSTRUCTION
+        | E.JUMP
+        | E.LINE
+        | E.PY_RESUME
+        | E.PY_RETURN
+        | E.PY_START
+        | E.PY_YIELD
+        | E.STOP_ITERATION
+    )
+
+else:
+    EVENT2STR: Final[Dict[int, str]]  = {
+        E.BRANCH: "BRANCH",
+        E.CALL: "CALL",
+        E.INSTRUCTION: "INSTRUCTION",
+        E.JUMP: "JUMP",
+        E.LINE: "LINE",
+        E.PY_RESUME: "PY_RESUME",
+        E.PY_RETURN: "PY_RETURN",
+        E.PY_START: "PY_START",
+        E.PY_YIELD: "PY_YIELD",
+        E.STOP_ITERATION: "PY_STOP_ITERATION",
+    }
+    LOCAL_EVENTS: Final[Tuple] = (
+        E.BRANCH
+        | E.CALL
+        | E.INSTRUCTION
+        | E.JUMP
+        | E.LINE
+        | E.PY_RESUME
+        | E.PY_RETURN
+        | E.PY_START
+        | E.PY_YIELD
+        | E.STOP_ITERATION
+    )
+
+
+# The maximum number of sys.monitoring tool IDs is 6 (range 0 to 5)
+MAX_TOOL_IDS = 6
+TOOL_ID_RANGE = range(MAX_TOOL_IDS)
+
+# A mapping of tool ids (a number) to tool names (as string)
+
+# We run trace_func if the event is in event_set.
+STARTED_STATE: Dict[int, bool] = {}
+
+# NOTE: This file now uses sys.monitoring (Python 3.12+) instead of sys.settrace.
+
 
 ALL_EVENTS = frozenset(ALL_EVENT_NAMES)
 

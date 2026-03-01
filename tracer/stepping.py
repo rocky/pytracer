@@ -6,7 +6,7 @@ import sys
 from dataclasses import dataclass
 from enum import Enum
 from types import CodeType, FrameType, FunctionType
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Dict, Final, Optional, Tuple
 
 from tracer.sys_monitoring import EVENT2STR, E, events_mask2str, mstart
 
@@ -15,9 +15,14 @@ GLOBAL_EVENTS = E.C_RAISE | E.C_RETURN | E.PY_UNWIND | E.RAISE
 STEP_INTO_TRACKING = E.CALL | E.PY_START | E.PY_RETURN
 
 # Mask to use for "step out". Use with & ^(INSTRUCTION_LIKE_EVENTS)
-INSTRUCTION_LIKE_EVENTS = (
-    E.CALL | E.LINE | E.INSTRUCTION | E.JUMP | E.BRANCH_LEFT | E.BRANCH_RIGHT | E.STOP_ITERATION
-)
+if sys.version_info >= (3, 14):
+    INSTRUCTION_LIKE_EVENTS: Final[Tuple[int]] = (
+        E.CALL | E.LINE | E.INSTRUCTION | E.JUMP | E.BRANCH_LEFT | E.BRANCH_RIGHT | E.STOP_ITERATION
+        )
+else:
+    INSTRUCTION_LIKE_EVENTS: Final[Tuple[int]] = (
+        E.CALL | E.LINE | E.INSTRUCTION | E.JUMP | E.BRANCH | E.STOP_ITERATION
+        )
 
 
 class StepType(Enum):
@@ -327,15 +332,17 @@ def sync_callbacks_with_mask(
     events_mask: int,
     callbacks: Dict[int, Callable],
 ):
-    for event in (
-        E.BRANCH_LEFT,
-        E.BRANCH_RIGHT,
+
+    events = [
         E.CALL,
         E.INSTRUCTION,
         E.JUMP,
         E.LINE,
         E.STOP_ITERATION,
-    ):
+    ]
+    if sys.version_info >= (3, 14):
+        events.append(E.BRANCH_LEFT, E.BRANCH_RIGHT)
+    for event in events:
         if event & events_mask == 0:
             old_callback = sys.monitoring.register_callback(tool_id, event, None)
             event_str = EVENT2STR[event]

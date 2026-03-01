@@ -71,7 +71,10 @@ def call_event_callback(
     else:
         print(f"XXX7 {code_to_call} is not a class?")
 
-    if child_code_info := CODE_TRACKING.get((sysmon_tool_id, code_to_call), None) is not None:
+    if (
+        child_code_info := CODE_TRACKING.get((sysmon_tool_id, code_to_call), None)
+        is not None
+    ):
         # We've seen code_to_call, it may have a local event mask that we have
         # to correct.
         # Figure out the code's new events_mask.
@@ -87,12 +90,16 @@ def call_event_callback(
                 # If this changes we can consider replacing with E.INSTRUCTIONS.
                 events_mask_child |= STEP_INTO_TRACKING | E.LINE
         else:
-            events_mask_child = sys.monitoring.get_local_events(sysmon_tool_id, code_to_call)
+            events_mask_child = sys.monitoring.get_local_events(
+                sysmon_tool_id, code_to_call
+            )
             if frame_info.steptype in (StepType.STEP_OVER, StepType.STEP_OUT):
                 events_mask_child &= ~(STEP_INTO_TRACKING | E.LINE | E.INSTRUCTION)
         sys.monitoring.set_local_events(sysmon_tool_id, code_to_call, events_mask_child)
     else:
-        events_mask_child = sys.monitoring.get_local_events(sysmon_tool_id, code_to_call)
+        events_mask_child = sys.monitoring.get_local_events(
+            sysmon_tool_id, code_to_call
+        )
         if frame_info.step_type in (StepType.STEP_OVER, StepType.STEP_OUT):
             events_mask_child &= ~(STEP_INTO_TRACKING | E.LINE | E.INSTRUCTION)
         else:
@@ -100,8 +107,7 @@ def call_event_callback(
             # we will need to set E.LINE for instructions to have an effect.
             # If this changes we can consider replacing with E.INSTRUCTIONS.
             events_mask_child |= STEP_INTO_TRACKING | E.LINE
-        print(f"XXX1 {bin(events_mask_child)} ({events_mask_child}) {code_to_call}" )
-
+        print(f"XXX1 {bin(events_mask_child)} ({events_mask_child}) {code_to_call}")
 
     print(
         (
@@ -407,17 +413,7 @@ def set_callback_hooks_for_toolid(tool_id: int) -> dict:
 
     Only local callbacks are set.
     """
-    return {
-        E.BRANCH_LEFT: (
-            lambda code, instruction_offset, destination_offset: goto_event_callback(
-                tool_id, "branch left", code, instruction_offset, destination_offset
-            )
-        ),
-        E.BRANCH_RIGHT: (
-            lambda code, instruction_offset, destination_offset: goto_event_callback(
-                tool_id, "branch right", code, instruction_offset, destination_offset
-            )
-        ),
+    result = {
         E.CALL: (
             lambda code, instruction_offset, code_to_call, args: call_event_callback(
                 tool_id, "call", code, instruction_offset, code_to_call, args
@@ -453,6 +449,29 @@ def set_callback_hooks_for_toolid(tool_id: int) -> dict:
             tool_id, "stop iteration", code, instruction_offset, retval
         ),
     }
+    if sys.version_info >= (3, 14):
+        result.update(
+            {
+                E.BRANCH_LEFT: (
+                    lambda code, instruction_offset, destination_offset: goto_event_callback(
+                        tool_id,
+                        "branch left",
+                        code,
+                        instruction_offset,
+                        destination_offset,
+                    )
+                ),
+                E.BRANCH_RIGHT: (
+                    lambda code, instruction_offset, destination_offset: goto_event_callback(
+                        tool_id,
+                        "branch right",
+                        code,
+                        instruction_offset,
+                        destination_offset,
+                    )
+                ),
+            }
+        )
 
 
 def start_event_callback(
@@ -535,6 +554,7 @@ def start_event_callback(
     ### end code inside hook. events_mask, frame and step_type should be set.
 
     return local_event_handler_return(tool_id, code, combined_events_mask)
+
 
 # Demo it
 if __name__ == "__main__":

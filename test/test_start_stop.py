@@ -22,7 +22,7 @@ trace_lines = []
 ignore_filter = tracefilter.TraceFilter([tracer.tracefilter, tracer.sys_monitoring, codecs.IncrementalDecoder.reset])
 
 
-def assert_check_lines(tag: str, got: list, expected: List[List[str, str]]):
+def assert_check_lines(tag: str, got: list, expected: List[List[str]]):
     if os.environ.get("DEBUG"):
         from pprint import pp
 
