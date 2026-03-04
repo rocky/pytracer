@@ -350,7 +350,7 @@ def add_trace_callbacks(
     MONITOR_HOOKS[tool_id] = trace_callbacks
     register_events(tool_id, new_events_mask, is_global, code)
     if code is not None and not is_global:
-        CODE_TRACKING[(tool_id, code)] = CodeInfo()
+        CODE_TRACKING[(tool_id, code)] = CodeInfo(breakpoints=[])
 
     return tool_id, new_events_mask
 

@@ -1,42 +1,31 @@
 """
-The simplest of examples: stepping for line and instruction events for a single
-basic block.
+Stepping for line and instruction events basic block raising an exception,
+and index error.
 """
 
 import sys
 
 from tracer.callbacks import set_callback_hooks_for_toolid
-from tracer.stepping import (StepGranularity, StepType, set_step_into,
-                             set_step_out, start_local)
+from tracer.stepping import (StepGranularity, StepType, set_step_out,
+                             start_local)
 from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
 
-tool_name = "01-step-out-one-basic-block"
+tool_name = "08-step-out-with-index-error"
 tool_id, events_mask = mstart(tool_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
+ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_out])
 
 
-def stepping_one_basic_block(
-    arg: int, granularity: StepGranularity, events_mask: int
-) -> int:
-    set_step_into(
-        tool_id,
-        frame=sys._getframe(0),
-        granularity=granularity,
-        events_mask=events_mask,
-        callbacks=callback_hooks,
-    )
-    x = arg
+def stepping_index_error(arg: list, events_mask: int) -> int:
     set_step_out(
         tool_id,
         frame=sys._getframe(0),
+        events_mask=events_mask,
         callbacks=callback_hooks,
     )
-    y = x + arg
+    y = arg[1]
     return y
-
-
-ignore_filter = TraceFilter([sys.monitoring, mstop])
 
 
 # First step lines
@@ -46,12 +35,15 @@ print("=" * 40)
 start_local(
     tool_name,
     callback_hooks,
-    events_mask=E.LINE | E.PY_RETURN,
-    step_type=StepType.STEP_OVER,
+    events_mask=E.LINE,
+    step_type=StepType.STEP_INTO,
     step_granularity=StepGranularity.LINE_NUMBER,
     ignore_filter=ignore_filter,
 )
-stepping_one_basic_block(1, granularity=StepGranularity.LINE_NUMBER, events_mask=E.LINE)
+try:
+    stepping_index_error([], E.LINE)
+except Exception:
+    pass
 mstop(tool_name)
 
 # Next, step instructions
@@ -63,13 +55,14 @@ start_local(
     tool_name,
     callback_hooks,
     events_mask=E.INSTRUCTION,
-    step_type=StepType.STEP_OVER,
+    step_type=StepType.STEP_INTO,
     step_granularity=StepGranularity.INSTRUCTION,
     ignore_filter=ignore_filter,
 )
-stepping_one_basic_block(
-    2, granularity=StepGranularity.INSTRUCTION, events_mask=E.INSTRUCTION
-)
+try:
+    stepping_index_error([], E.INSTRUCTION | E.PY_RETURN)
+except Exception:
+    pass
 mstop(tool_name)
 
 # Finally, step both instructions and lines
@@ -83,13 +76,12 @@ start_local(
     tool_name,
     callback_hooks,
     events_mask=E.INSTRUCTION | E.LINE,
-    step_type=StepType.STEP_OVER,
+    step_type=StepType.STEP_INTO,
     step_granularity=StepGranularity.INSTRUCTION,
     ignore_filter=ignore_filter,
 )
-stepping_one_basic_block(
-    3,
-    granularity=StepType.STEP_OVER,
-    events_mask=E.INSTRUCTION | E.LINE,
-)
+try:
+    stepping_index_error([], E.INSTRUCTION | E.LINE | E.PY_RETURN)
+except Exception:
+    pass
 mstop(tool_name)
