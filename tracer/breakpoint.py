@@ -86,7 +86,7 @@ def clear_breakpoint(tool_id: int, breakpoint: Breakpoint) -> Tuple[int, List[Br
         no_breakpoints = True
         breakpoints = []
 
-    events = sys.monitoring.get_local_events(tool_id, code)
+    combined_events = events = sys.monitoring.get_local_events(tool_id, code)
     if no_breakpoints:
         if events == 0:
             # Nothing to do
@@ -99,7 +99,6 @@ def clear_breakpoint(tool_id: int, breakpoint: Breakpoint) -> Tuple[int, List[Br
             pass
         elif isinstance(location, CodeOffsetValue):
             combined_events = events & ~E.INSTRUCTION
-            pass
 
         sys.monitoring.set_local_events(tool_id, code, combined_events)
 
@@ -109,6 +108,7 @@ def set_breakpoint(tool_id: int, bp: Breakpoint) -> Tuple[int, CodeInfo]:
     location = bp.location
     code = bp.code
     events = sys.monitoring.get_local_events(tool_id, code)
+
     if isinstance(location, LineNumberValue):
         combined_events = events | E.LINE
     elif isinstance(location, LineNumberOffsetValue):
@@ -122,5 +122,7 @@ def set_breakpoint(tool_id: int, bp: Breakpoint) -> Tuple[int, CodeInfo]:
     code_info = CODE_TRACKING.get((tool_id, code), CodeInfo([], None))
     if bp not in code_info.breakpoints:
         code_info.breakpoints.append(bp)
-        CODE_TRACKING[(tool_id, code)] = code_info
+    else:
+        code_info.breakpoints = [bp]
+    CODE_TRACKING[(tool_id, code)] = code_info
     return combined_events, code_info

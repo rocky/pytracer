@@ -42,6 +42,9 @@ class StepType(Enum):
     STEP_OUT = "step out"
     STEP_OVER = "step over"
 
+    def __str__(self):
+        return self.value
+
 
 class StepGranularity(Enum):
     INSTRUCTION = "instruction"
@@ -51,6 +54,8 @@ class StepGranularity(Enum):
     LINE_NUMBER = "line number"
     # Is there stuff like "RESUME" or at "safe" points
 
+    def __str__(self):
+        return self.value
 
 @dataclass
 class FrameInfo:
@@ -67,11 +72,7 @@ FRAME_TRACKING: Dict[FrameType, FrameInfo] = {}
 # finish or return from function, method or module.
 # Note: we cannot include global events, specifically
 # those in GLOBAL_EVENTS since that is illegal for set_local_events().
-STEP_OUT_EVENTS = E.PY_YIELD | E.PY_RETURN
-
-# Event mask that should be use to callback on
-# line stepping. This should
-STEP_OVER_EVENTS = STEP_OUT_EVENTS
+STEP_OUT_TRACKING = E.PY_YIELD | E.PY_RETURN
 
 
 def clear_stale_frames(tool_id: int, frame: FrameInfo):
@@ -160,7 +161,6 @@ def set_step_continue(
     # detected in the return portion of the callback handlers.
 
     code = frame.f_code
-
     code_info = Mbreakpoint.CODE_TRACKING.get((tool_id, code), [])
     breakpoints = code_info.breakpoints
     if len(breakpoints) == 0:
@@ -179,42 +179,40 @@ def set_step_continue(
         sync_callbacks_with_mask(code, tool_id, E.NO_EVENTS, callbacks)
         return E.NO_EVENTS
 
+    # Have breakpoints, set to track either lines or
+    # instructions (or both) based on the kind of breakpoints
+    # we have for code.
+
+    if (frame_info := FRAME_TRACKING.get(frame)) is not None:
+        if frame_info.step_type in (
+            StepType.NO_STEPPING,
+            StepType.STEP_OUT,
+            StepType.STEP_OVER,
+        ):
+            frame_info.step_type = StepType.STEP_BREAKPOINT
+            local_events_mask = frame_info.local_events_mask
+
     else:
-        # Have breakpoints, set to track either lines or
-        # instructions (or both) based on the kind of breakpoints
-        # we have for code.
+        # No frame previously recorded. So make one now.
 
-        if (frame_info := FRAME_TRACKING.get(frame)) is not None:
-            if frame_info.step_type in (
-                StepType.NO_STEPPING,
-                StepType.STEP_OUT,
-                StepType.STEP_OVER,
-            ):
-                #
-                frame_info.step_type = StepType.STEP_BREAKPOINT
-                local_events_mask = frame_info.local_events_mask
+        # FIXME: Set step granularity based on breakpoint info.
+        step_granularity=StepGranularity.INSTRUCTION
 
+        if step_granularity == StepGranularity.INSTRUCTION:
+            local_events_mask = E.LINE | E.INSTRUCTION
         else:
-            # No frame previously recorded. So make one now.
+            local_events_mask = E.LINE
 
-            # FIXME: Set step granularity based on breakpoint info.
-            step_granularity=StepGranularity.INSTRUCTION
+        frame_info = FrameInfo(
+            step_type=StepType.STEP_BREAKPOINT,
+            step_granularity=StepGranularity.INSTRUCTION,
+            local_events_mask=local_events_mask,
+            calls_to=None,
+        )
+    FRAME_TRACKING[frame] = frame_info
 
-            if step_granularity == StepGranularity.INSTRUCTION:
-                local_events_mask = E.LINE | E.INSTRUCTION
-            else:
-                local_events_mask = E.LINE
-
-            frame_info = FrameInfo(
-                step_type=StepType.STEP_BREAKPOINT,
-                step_granularity=StepGranularity.INSTRUCTION,
-                local_events_mask=local_events_mask,
-                calls_to=None,
-            )
-        FRAME_TRACKING[frame] = frame_info
-
-        sync_callbacks_with_mask(code, tool_id, local_events_mask, callbacks)
-        return sys.monitoring.get_local_events(tool_id, code)
+    sync_callbacks_with_mask(code, tool_id, local_events_mask, callbacks)
+    return sys.monitoring.get_local_events(tool_id, code)
 
 
 def set_step_into(
@@ -236,7 +234,7 @@ def set_step_into(
     # Note that all "~" operations should be done before any "|" operations.
     events_mask &= ~GLOBAL_EVENTS
 
-    combined_events_mask = STEP_OUT_EVENTS | events_mask | E.CALL | E.PY_START
+    combined_events_mask = STEP_OUT_TRACKING | events_mask | E.CALL | E.PY_START
 
     # Note step out is desired in FRAME_TRACKING so it can be
     # detected in the return portion of the callback handlers.
@@ -275,7 +273,7 @@ def set_step_out(tool_id: int, frame: FrameType, callbacks: Dict[int, Callable])
     # TODO: If we can be sure there is not stale code (stale frames) that were
     # skipped over by exceptions, we don't need to trace into E.CALL to check for this.
 
-    combined_events_mask = STEP_OUT_EVENTS | events_mask
+    combined_events_mask = STEP_OUT_TRACKING | events_mask
 
     FRAME_TRACKING[frame] = FrameInfo(
         step_type=StepType.STEP_OUT,
@@ -309,7 +307,7 @@ def set_step_over(
     # Note that all "~" operations should be done before any "|" operations.
     events_mask &= ~GLOBAL_EVENTS
 
-    combined_events_mask = STEP_OUT_EVENTS | events_mask | E.PY_START
+    combined_events_mask = STEP_OUT_TRACKING | events_mask | E.PY_START
 
     # Note step out is desired in FRAME_TRACKING so it can be
     # detected in the return portion of the callback handlers.
@@ -391,7 +389,7 @@ def sync_callbacks_with_mask(
         E.STOP_ITERATION,
     ]
     if sys.version_info >= (3, 14):
-        events.append(E.BRANCH_LEFT, E.BRANCH_RIGHT)
+        events += [E.BRANCH_LEFT, E.BRANCH_RIGHT]
     for event in events:
         if event & events_mask == 0:
             old_callback = sys.monitoring.register_callback(tool_id, event, None)
