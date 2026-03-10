@@ -11,36 +11,36 @@ from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
 
 
-def double_nested_function(x: list) -> list:
+def nested_function(x: list) -> list:
     # Raises an IndexError
     return x[100]
 
 
-def nested_function(x: list) -> list:
-    return double_nested_function(x)
-
-
-tool_name = "12-double-call-with-exception"
+tool_name = "11-step-call-raising-exception"
 tool_id, events_mask = mstart(tool_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
 ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_into, set_step_over])
 
 
-def step_into_nested_call(x: list) -> int:
+def step_into_simple_nested_call(x: list) -> int:
     set_step_into(
         tool_id,
-        sys._getframe(0),
-        StepGranularity.LINE_NUMBER,
-        E.LINE,
+        frame=sys._getframe(0),
+        granularity=StepGranularity.LINE_NUMBER,
+        events_mask=E.LINE,
         callbacks=callback_hooks,
     )
     try:
-        return nested_function([1, 2, 3])
+        x = nested_function([1, 2, 3])
     except IndexError:
-        return 4
+        pass
+    try:
+        return nested_function([4, 5, 6])
+    except IndexError:
+        return x
 
 
-def step_over_nested_call(x: list) -> int:
+def step_over_simple_nested_call(x: list) -> int:
     set_step_over(
         tool_id,
         sys._getframe(0),
@@ -49,9 +49,13 @@ def step_over_nested_call(x: list) -> int:
         callbacks=callback_hooks,
     )
     try:
-        return nested_function([7, 8, 9])
+        x = nested_function([7, 8, 9])
     except IndexError:
-        return 5
+        pass
+    try:
+        return nested_function([10, 11, 12])
+    except IndexError:
+        return x
 
 
 # First, step try step into
@@ -66,7 +70,7 @@ start_local(
     step_granularity=StepGranularity.LINE_NUMBER,
     ignore_filter=ignore_filter,
 )
-step_into_nested_call([1, 2, 3])
+step_into_simple_nested_call(5)
 mstop(tool_name)
 
 # Next, try step over
@@ -82,5 +86,5 @@ start_local(
     step_granularity=StepGranularity.LINE_NUMBER,
     ignore_filter=ignore_filter,
 )
-step_over_nested_call([4, 5, 6])
+step_over_simple_nested_call(6)
 mstop(tool_name)

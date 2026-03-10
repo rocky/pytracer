@@ -11,7 +11,7 @@ from tracer.stepping import (StepGranularity, StepType, set_step_out,
 from tracer.sys_monitoring import E, mstart, mstop
 from tracer.tracefilter import TraceFilter
 
-tool_name = "08-step-out-with-index-error"
+tool_name = "09-step-out-with-index-error"
 tool_id, events_mask = mstart(tool_name, tool_id=1)
 callback_hooks = set_callback_hooks_for_toolid(tool_id)
 ignore_filter = TraceFilter([sys.monitoring, mstop, set_step_out])

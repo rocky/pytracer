@@ -164,8 +164,8 @@ def set_step_continue(
     code_info = Mbreakpoint.CODE_TRACKING.get((tool_id, code), [])
     breakpoints = code_info.breakpoints
     if len(breakpoints) == 0:
-        # No breakpoints: set to skip over instructions, lines,
-        # and calls of this code.
+        # No breakpoints in "code": set to skip over instructions, lines,
+        # and calls for just this piece code.
 
         FRAME_TRACKING[frame] = FrameInfo(
             step_type=StepType.NO_STEPPING,
@@ -420,4 +420,5 @@ def sync_callbacks_with_mask(
             )
             events_mask &= ~event
 
-    sys.monitoring.set_local_events(tool_id, code, events_mask)
+    print(f"XXX0c: sync_callbacks_with_mask {sys.monitoring.get_local_events(tool_id, code)}\n\t{code}")
+    # sys.monitoring.set_local_events(tool_id, code, events_mask)

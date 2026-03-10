@@ -100,6 +100,7 @@ def clear_breakpoint(tool_id: int, breakpoint: Breakpoint) -> Tuple[int, List[Br
         elif isinstance(location, CodeOffsetValue):
             combined_events = events & ~E.INSTRUCTION
 
+        print(f"XXX0b: clear_breakpoint {sys.monitoring.get_local_events(tool_id, code)}")
         sys.monitoring.set_local_events(tool_id, code, combined_events)
 
     return combined_events, breakpoints
@@ -119,10 +120,12 @@ def set_breakpoint(tool_id: int, bp: Breakpoint) -> Tuple[int, CodeInfo]:
         pass
 
     sys.monitoring.set_local_events(tool_id, code, combined_events)
+    print(f"XXX0a: set_breakpoint {sys.monitoring.get_local_events(tool_id, code)}")
     code_info = CODE_TRACKING.get((tool_id, code), CodeInfo([], None))
     if bp not in code_info.breakpoints:
         code_info.breakpoints.append(bp)
     else:
         code_info.breakpoints = [bp]
     CODE_TRACKING[(tool_id, code)] = code_info
+    print(f"XXX0b: set_breakpoint {sys.monitoring.get_local_events(tool_id, code)}\n\t{code}")
     return combined_events, code_info
