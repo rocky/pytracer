@@ -365,6 +365,8 @@ def line_event_callback(sysmon_tool_id: int, code: CodeType, line_number: int) -
             return
 
     frame_info = FRAME_TRACKING.get(frame, None)
+    code_info = CODE_TRACKING.get((sysmon_tool_id, code))
+
     step_type = None
     if frame_info is not None:
         step_type = frame_info.step_type
@@ -381,7 +383,11 @@ def line_event_callback(sysmon_tool_id: int, code: CodeType, line_number: int) -
             pass
         pass
     else:
-        step_type = StepType.NO_STEPPING
+
+        if code_info is not None and len(code_info.breakpoints) > 0:
+            step_type = StepType.STEP_BREAKPOINT
+        else:
+            step_type = StepType.NO_STEPPING
         step_granularity = StepGranularity.LINE_NUMBER
         FRAME_TRACKING[frame] = FrameInfo(
             step_type = step_type,
@@ -394,8 +400,9 @@ def line_event_callback(sysmon_tool_id: int, code: CodeType, line_number: int) -
 
     event = None
     if step_type == StepType.STEP_BREAKPOINT:
-        if (code_info := CODE_TRACKING.get((sysmon_tool_id, code))) is None:
-            print(f"Woah -- breakpoint step type for {code_short(code)} not found in CODE_INFO")
+        if code_info is None:
+            print("XXX: line stepping due to looking for a breakpoint set on some other code")
+            return
         else:
             brkpts = code_info.breakpoints
             found_bp = next((bp for bp in brkpts if bp.location.line_number == line_number), None)

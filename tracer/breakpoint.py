@@ -120,12 +120,11 @@ def set_breakpoint(tool_id: int, bp: Breakpoint) -> Tuple[int, CodeInfo]:
         pass
 
     sys.monitoring.set_local_events(tool_id, code, combined_events)
-    print(f"XXX0a: set_breakpoint {sys.monitoring.get_local_events(tool_id, code)}")
+    print(f"set_breakpoint: sys.monitoring.set_local_events({tool_id}, {code.co_name}, {combined_events})")
     code_info = CODE_TRACKING.get((tool_id, code), CodeInfo([], None))
     if bp not in code_info.breakpoints:
         code_info.breakpoints.append(bp)
     else:
         code_info.breakpoints = [bp]
     CODE_TRACKING[(tool_id, code)] = code_info
-    print(f"XXX0b: set_breakpoint {sys.monitoring.get_local_events(tool_id, code)}\n\t{code}")
     return combined_events, code_info

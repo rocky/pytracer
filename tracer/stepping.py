@@ -5,10 +5,9 @@ Debugger-like "step into", "step over" and "finish" support.
 import sys
 from dataclasses import dataclass
 from enum import Enum
-from types import CodeType, FrameType, FunctionType
+from types import CodeType, FrameType
 from typing import Callable, Dict, Final, Optional, Tuple
 
-import tracer.breakpoint as Mbreakpoint
 from tracer.sys_monitoring import EVENT2STR, events_mask2str, mstart
 
 E = sys.monitoring.events
@@ -110,6 +109,7 @@ def refresh_code_mask(tool_id: int, frame: FrameInfo) -> Tuple[int, int]:
     So be sure to set the local event mask back to what it was,
     saved in FRAME_TRACKING at the time of the call.
     """
+
     code = frame.f_code
     new_events_mask = events_mask = sys.monitoring.get_local_events(tool_id, code)
 
@@ -123,7 +123,7 @@ def refresh_code_mask(tool_id: int, frame: FrameInfo) -> Tuple[int, int]:
             f"({frame_info.local_events_mask}) {events_mask2str(frame_info.local_events_mask)}"
         )
         sys.monitoring.set_local_events(
-            tool_id, frame.f_code, frame_info.local_events_mask
+            tool_id, code, frame_info.local_events_mask
         )
         new_events_mask = frame_info.local_events_mask
 
@@ -151,7 +151,8 @@ def code_short(code: CodeType) -> str:
 
 
 def set_step_continue(
-    tool_id: int, frame: FrameType, callbacks: Dict[int, Callable]
+        tool_id: int, frame: FrameType, callbacks: Dict[int, Callable],
+        have_breakpoints: bool
 ) -> int:
     """
     Set local callback to remove stepping.
@@ -161,9 +162,7 @@ def set_step_continue(
     # detected in the return portion of the callback handlers.
 
     code = frame.f_code
-    code_info = Mbreakpoint.CODE_TRACKING.get((tool_id, code), [])
-    breakpoints = code_info.breakpoints
-    if len(breakpoints) == 0:
+    if not have_breakpoints:
         # No breakpoints in "code": set to skip over instructions, lines,
         # and calls for just this piece code.
 
@@ -177,9 +176,11 @@ def set_step_continue(
         code = frame.f_code
 
         sync_callbacks_with_mask(code, tool_id, E.NO_EVENTS, callbacks)
+        sys.monitoring.set_local_events(tool_id, code, E.NO_EVENTS)
+        print(f"set_step_continue: set {code.co_name} events to {E.NO_EVENTS}")
         return E.NO_EVENTS
 
-    # Have breakpoints, set to track either lines or
+    # We have breakpoints, set to track either lines or
     # instructions (or both) based on the kind of breakpoints
     # we have for code.
 
@@ -196,7 +197,7 @@ def set_step_continue(
         # No frame previously recorded. So make one now.
 
         # FIXME: Set step granularity based on breakpoint info.
-        step_granularity=StepGranularity.INSTRUCTION
+        step_granularity = StepGranularity.LINE_NUMBER
 
         if step_granularity == StepGranularity.INSTRUCTION:
             local_events_mask = E.LINE | E.INSTRUCTION
@@ -379,8 +380,16 @@ def sync_callbacks_with_mask(
     tool_id: int,
     events_mask: int,
     callbacks: Dict[int, Callable],
+    remove_registered_fns: bool = False
 ):
 
+    """
+    Make sure that every event in `events_mask` is registered.
+    by sys.monitoring.register_callback().
+
+    If remove_registered_fns is True, then we unregister
+    a the callback if the associated events_mask is not set.
+    """
     events = [
         E.CALL,
         E.INSTRUCTION,
@@ -391,22 +400,31 @@ def sync_callbacks_with_mask(
     if sys.version_info >= (3, 14):
         events += [E.BRANCH_LEFT, E.BRANCH_RIGHT]
     for event in events:
-        if event & events_mask == 0:
-            old_callback = sys.monitoring.register_callback(tool_id, event, None)
-            event_str = EVENT2STR[event]
-            if old_callback is not None:
-                if (
-                    isinstance(old_callback, FunctionType)
-                    and old_callback.__name__ == "<lambda>"
-                ):
-                    old_name = f"{event_str.lower()} callback"
-                else:
-                    old_name = str(old_callback)
 
-                print(f"Cleared event {event_str} in {old_name}")
-                pass
-            pass
-        elif (callback := callbacks.get(event)) is not None:
+        # Because we might have breakpoints set in the code, we will
+        # *not* remove callbacks once they are registered.  In the
+        # future, we might consider this if it is needed or desired.
+        # But then we'll also need to consult CODE_TRACKING.  For now,
+        # let's keep things simpler
+
+        # if event & events_mask == 0:
+        #     old_callback = sys.monitoring.register_callback(tool_id, event, None)
+        #     old_callback = None
+        #     event_str = EVENT2STR[event]
+        #     if old_callback is not None:
+        #         if (
+        #             isinstance(old_callback, FunctionType)
+        #             and old_callback.__name__ == "<lambda>"
+        #         ):
+        #             old_name = f"{event_str.lower()} callback"
+        #         else:
+        #             old_name = str(old_callback)
+        #
+        #         print(f"Cleared event {event_str} in {old_name}")
+        #         pass
+        #     pass
+
+        if (callback := callbacks.get(event)) is not None:
             # print(f"XXX registering event {EVENT2STR[event]} ({event}) with {callback}")
             old_callback = sys.monitoring.register_callback(tool_id, event, callback)
             if old_callback is not None and old_callback != callback:
@@ -420,5 +438,4 @@ def sync_callbacks_with_mask(
             )
             events_mask &= ~event
 
-    print(f"XXX0c: sync_callbacks_with_mask {sys.monitoring.get_local_events(tool_id, code)}\n\t{code}")
-    # sys.monitoring.set_local_events(tool_id, code, events_mask)
+    sys.monitoring.set_local_events(tool_id, code, events_mask)
