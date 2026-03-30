@@ -94,6 +94,7 @@ def clear_stale_frames(tool_id: int, frame: FrameInfo):
         events_mask &= ~(INSTRUCTION_LIKE_EVENTS)
         events_mask &= ~E.LINE
         sys.monitoring.set_local_events(tool_id, code, events_mask)
+        print(f"clear_stale_frames: {code.co_name} {events_mask}")
         del FRAME_TRACKING[frame]
         frame = calls_to_frame
 
@@ -125,6 +126,7 @@ def refresh_code_mask(tool_id: int, frame: FrameInfo) -> Tuple[int, int]:
         sys.monitoring.set_local_events(
             tool_id, code, frame_info.local_events_mask
         )
+        print(f"refresh_code_mask: {code.co_name} {events_mask}")
         new_events_mask = frame_info.local_events_mask
 
     return events_mask, new_events_mask
@@ -185,14 +187,13 @@ def set_step_continue(
     # we have for code.
 
     if (frame_info := FRAME_TRACKING.get(frame)) is not None:
+        local_events_mask = frame_info.local_events_mask
         if frame_info.step_type in (
             StepType.NO_STEPPING,
             StepType.STEP_OUT,
             StepType.STEP_OVER,
         ):
             frame_info.step_type = StepType.STEP_BREAKPOINT
-            local_events_mask = frame_info.local_events_mask
-
     else:
         # No frame previously recorded. So make one now.
 
@@ -439,3 +440,4 @@ def sync_callbacks_with_mask(
             events_mask &= ~event
 
     sys.monitoring.set_local_events(tool_id, code, events_mask)
+    print(f"sync_callbacks_with_mask: sys.monitoring.set_local_events({tool_id}, {code.co_name}, {events_mask})")

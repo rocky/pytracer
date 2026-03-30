@@ -95,6 +95,7 @@ def call_event_callback(
             )
             if frame_info.steptype in (StepType.STEP_OVER, StepType.STEP_OUT):
                 events_mask_child &= ~(STEP_INTO_TRACKING | E.LINE | E.INSTRUCTION)
+        print(f"call_event_callback: set local_events: in child {events_mask_child}")
         sys.monitoring.set_local_events(sysmon_tool_id, code_to_call, events_mask_child)
     else:
         events_mask_child = sys.monitoring.get_local_events(
