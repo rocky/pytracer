@@ -4,6 +4,6 @@ PYTHON_VERSION=3.3
 pyenv local $PYTHON_VERSION
 cd $(dirname ${BASH_SOURCE[0]})
 if . ./setup-python-3.3.sh; then
-    git merge python-3.6-to-3.10
+    git merge python-3.6-to-3.11
 fi
 cd $pytracer_merge_33_owd
