@@ -23,7 +23,6 @@ functions.
 import inspect
 import sys
 import threading
-
 from enum import Enum
 from typing import Any, Callable, NamedTuple, Optional
 
@@ -52,6 +51,7 @@ ALL_EVENT_NAMES = (
 
 # If you want short strings for the above event names
 EVENT2SHORT = {
+    "breakpoint": "br",
     "c_call": "C>",
     "c_exception": "C!",
     "c_return": "C<",
