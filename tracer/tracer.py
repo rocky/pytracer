@@ -40,8 +40,9 @@ ALL_EVENT_NAMES = (
     "call",
     "exception",
     "line",
+    "opcode",
     "return",
-)
+) if sys.version_info[:2] >= (3, 7) else (
 
 # If you want short strings for the above event names
 EVENT2SHORT = {
