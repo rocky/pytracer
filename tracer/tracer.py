@@ -23,7 +23,6 @@ functions.
 import inspect
 import sys
 import threading
-
 from enum import Enum
 from typing import Any, Callable, NamedTuple, Optional
 
@@ -40,6 +39,7 @@ STARTED_STATE = False  # True if we are tracing.
 # FIXME: in 2.6 we can use sys.gettrace
 
 ALL_EVENT_NAMES = (
+    "breakpoint",
     "c_call",
     "c_exception",
     "c_return",
@@ -52,6 +52,7 @@ ALL_EVENT_NAMES = (
 
 # If you want short strings for the above event names
 EVENT2SHORT = {
+    "breakpoint": "br",
     "c_call": "C>",
     "c_exception": "C!",
     "c_return": "C<",
