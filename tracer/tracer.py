@@ -42,6 +42,7 @@ STARTED_STATE = False  # True if we are tracing.
 # The opcode event starts in Python 3.7
 
 ALL_EVENT_NAMES = (
+    "breakpoint",
     "c_call",
     "c_exception",
     "c_return",
