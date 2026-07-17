@@ -19,6 +19,9 @@ import os
 import sys
 from types import CodeType, ModuleType
 
+if sys.version_info[:2] >= (3, 2):
+    from functools import lru_cache
+
 
 def add_to_code_set(object, code_set):
     """Add `object` to the list of functions to include.
@@ -63,6 +66,9 @@ def get_code_object(object):
 
 PATH2MODULE = {}
 
+# FIXME: I can't figure out how to write a decorator for this
+# in 3.0..3.1. So just do it this way
+if sys.version_info[:2] >= (3, 2):
 
 def get_modules_for_path(module_values, module_path):
     return tuple(

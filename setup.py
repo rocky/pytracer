@@ -15,10 +15,10 @@ from setuptools import find_packages, setup
 import os
 
 top_dir = os.path.dirname(__file__)
-README  = os.path.join(top_dir, 'README.rst')
+README  = os.path.join(top_dir, "README.rst")
 
 # Description in package will come from the README file.
-long_description = open(README).read() + '\n\n'
+long_description = open(README).read() + "\n\n"
 
 __import__("pkg_resources")
 
