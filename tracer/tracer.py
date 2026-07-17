@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#   Copyright (C) 2008-2009, 2013, 2024 Rocky Bernstein <rocky@gnu.org>
+#   Copyright (C) 2008-2009, 2013, 2024, 2026 Rocky Bernstein <rocky@gnu.org>
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -33,16 +33,29 @@ STARTED_STATE = False  # True if we are tracing.
 # FIXME: in 2.6 we can use sys.gettrace
 
 ALL_EVENT_NAMES = (
-    "breakpoint",
-    "c_call",
-    "c_exception",
-    "c_return",
-    "call",
-    "exception",
-    "line",
-    "opcode",
-    "return",
-) if sys.version_info[:2] >= (3, 7) else (
+    (
+        "breakpoint",
+        "c_call",
+        "c_exception",
+        "c_return",
+        "call",
+        "exception",
+        "line",
+        "opcode",
+        "return",
+    )
+    if sys.version_info[:2] >= (3, 7)
+    else (
+        "breakpoint",
+        "c_call",
+        "c_exception",
+        "c_return",
+        "call",
+        "exception",
+        "line",
+        "return",
+    )
+)
 
 # If you want short strings for the above event names
 EVENT2SHORT = {
