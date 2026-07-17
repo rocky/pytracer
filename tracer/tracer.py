@@ -33,6 +33,7 @@ STARTED_STATE = False  # True if we are tracing.
 # FIXME: in 2.6 we can use sys.gettrace
 
 ALL_EVENT_NAMES = (
+    "breakpoint",
     "c_call",
     "c_exception",
     "c_return",
