@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#   Copyright (C) 2008-2009, 2013, 2024 Rocky Bernstein <rocky@gnu.org>
+#   Copyright (C) 2008-2009, 2013, 2024, 2026 Rocky Bernstein <rocky@gnu.org>
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ functions.
 import inspect
 import sys
 import threading
+
 from namedtuple24 import namedtuple
 
 TraceEntry = namedtuple("TraceEntry", "trace_func event_set ignore_frameid")
@@ -40,6 +41,7 @@ ALL_EVENT_NAMES = (
     "call",
     "exception",
     "line",
+    "opcode",
     "return",
 )
 
