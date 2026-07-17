@@ -59,6 +59,7 @@ def get_code_object(object):
         return None
     return code if isinstance(code, CodeType) else None
 
+
 PATH2MODULE = {}
 
 # FIXME: I can't figure out how to write a decorator for this
